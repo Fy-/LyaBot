@@ -1,0 +1,34 @@
+#10000 iter
+
+RedditInput : both ways , up a hill .
+LyaNMT v0.1a : that 's a mighty difference .
+
+RedditInput : same shit , different day . politicians do n't care about their voters , only that they 're gullible enough to vote for them .
+LyaNMT v0.1a : they 're actually quite dumb
+
+
+RedditInput : this is the expected response .
+LyaNMT v0.1a : this is the correct answer .
+
+RedditInput : ' i just do n't believe in hand-outs '
+LyaNMT v0.1a : ' i do n't believe you .
+
+RedditInput : op 's mom has the most luscious tits , he 's lucky he got to suck on those
+LyaNMT v0.1a : tits tits and tits tits !
+
+
+RedditInput : hey another radio guy , fast attack here ! classified yes , boring as fuck hell yes !
+LyaNMT v0.1a : dunno man , i appreciate that .
+
+RedditInput : most evidence seems to suggest dreaming acts to categorize memories and prune out unnecessary information , similar to a computer 's defragmentation process .
+LyaNMT v0.1a : that 's incredibly incredibly interesting .
+
+RedditInput : yes ! wtf ! the south african confused me . never realised our accents were in any way similar .
+LyaNMT v0.1a : i think we 're talking about the canadian accent here .
+
+#15000 iter
+RedditInput : lol , dirty talk is hard , feels like you need a vin diagram to agree to terms
+LyaNMT v0.1a : oh , i see what you did there .
+
+RedditInput : when i tried and succeeded to pee with an erection as kid , i thought i broke my dick .
+LyaNMT v0.1a : i seriously did the same thing .

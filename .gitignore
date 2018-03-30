@@ -1,3 +1,13 @@
+# Cause it's more than 100Gb
+_data/
+_data_formated/*
+_data_raw/*
+_model/*
+
+# Cause it's personal
+_.py
+infer.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
