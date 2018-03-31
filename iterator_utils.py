@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Iterator utils
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
 
 	This file is based and inspired by https://github.com/tensorflow/nmt
-"""
-import numpy as np
-from file_utils import read_lines, _LINES_IN_FILE, read_until_for
-from data_utils import Data
-from settings import settings
+'''
 import os
 import tensorflow as tf
-from collections import namedtuple
+from settings import settings
 
 class DataIterator(object):
 	@staticmethod
@@ -60,15 +56,16 @@ class DataIterator(object):
 				'target_sequence_length' : None
 			})
 
-	def get_iterator(file, vocab_table, num_parallel_calls=8, skip_count=None, reshuffle_each_iteration=True):
+	@staticmethod
+	def get_iterator(file, vocab_table, skip_count=None, reshuffle_each_iteration=True):
 		''' Tensorflow is cool, even for reading and parsing files '''
 		
-		if not output_buffer_size:
-			output_buffer_size = batch_size * 1000
 
-		num_buckets = settings.hparams.num_buckets
+		output_buffer_size = settings.batch_size * 1000
 
-		batch_size = settings.hparams.batch_size
+		num_buckets = settings.num_buckets
+
+		batch_size = settings.batch_size
 
 		src_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.src'))
 		tgt_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.tgt'))
@@ -87,9 +84,6 @@ class DataIterator(object):
 			dataset = dataset.skip(skip_count)
 
 		dataset = dataset.shuffle(output_buffer_size, None, reshuffle_each_iteration)
-
-		output_buffer_size = settings.hparams.batch_size * 1000
-		dataset = dataset.shuffle(output_buffer_size, reshuffle_each_iteration=True)
 
 		# Split 
 		dataset = dataset.map(
@@ -151,7 +145,6 @@ class DataIterator(object):
 					0) # tgt_len -- 
 				)  
 
-
 		if num_buckets > 1:
 
 			def key_func(unused_1, unused_2, unused_3, src_len, tgt_len):
@@ -159,10 +152,7 @@ class DataIterator(object):
 				# Pairs with length [0, bucket_width) go to bucket 0, length
 				# [bucket_width, 2 * bucket_width) go to bucket 1, etc.  Pairs with length
 				# over ((num_bucket-1) * bucket_width) words all go into the last bucket.
-				if src_max_len:
-					bucket_width = (src_max_len + num_buckets - 1) // num_buckets
-				else:
-					bucket_width = 10
+				bucket_width = (50 + num_buckets - 1) // num_buckets
 
 				# Bucket sentence pairs by the length of their source sentence and target
 				# sentence.

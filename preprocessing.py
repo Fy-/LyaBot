@@ -1,28 +1,34 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Preprocessing
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
-"""
+
+	This file is based and inspired by:
+		- https://github.com/daniel-kukiela/nmt-chatbot 
+		- https://github.com/rsennrich/subword-nmt
+'''
 
 import os
 import pickle
 import json
 import html
 import regex as re
-import glob
+import time
 from multiprocessing import Pool
 from collections import Counter, defaultdict
 from tensorflow.python.ops import lookup_ops
 from itertools import chain
 
 from settings import settings
-from file_utils import read_lines, write_lines, _LINES_IN_FILE
+from file_utils import read_lines, write_lines, _LINES_IN_FILE,_FILE_BATCH_SIZE
 
 class Preprocessing(object):
 
-	def __init__(self, vocab, files):
+	def __init__(self, files):
+		self.files = files
+
 		self.regex = {
 			'special': re.compile(r'[\x00-\x1f]+|\u3000'),
 			'separate': re.compile(r'(?<![▁])([^\w\s\.▁])'),
@@ -31,8 +37,9 @@ class Preprocessing(object):
 			'split' : re.compile('(?: |^)(?:▁(▁))?([' + re.escape(r'`~!@#$%^&*()-_=+{[}]:;\'",<>?/|\\') + '0-9]|\.+)'),
 			'restorephrases': re.compile(r'P▁R([\d\s▁]+?)P▁R'),
 			'restoreperiods': re.compile(r'P▁P([\d\s▁]+?)P▁P'),
-			'periods': re.compile('\.{2,}'),
-			'protected' : None
+			'periods': re.compile(r'\.{2,}'),
+			'protected' : None,
+			'multiples' :  re.compile(r'(.)(\1{4,})')
 		}
 
 		self.magics = {
@@ -50,16 +57,13 @@ class Preprocessing(object):
 		}
 
 		self.load_protected()
-		self.files = []
-		files = glob.glob('{}/*'.format(os.path.join(settings.path_data)))
-		for file in files:
-			if '.src' in file or '.tgt' in file:
-				self.files.append(file)
+
 
 		print ('Starting Preprocessing on files: {}'.format(str(self.files)))
 
 		self.learned_bpe = False
 		self.generated_vocab = False
+		self.joins = None
 
 	@staticmethod
 	def create_vocab_tables():
@@ -88,6 +92,7 @@ class Preprocessing(object):
 
 		sentence = sentence.strip()
 		sentence = html.unescape(sentence)
+		sentence = self.regex['multiples'].sub(r'\1\1\1\1\1', sentence)
 		sentence = sentence.replace('<unk>', '').replace('<s>', '').replace('</s>', '').replace('▁','_')
 
 		sentence = self.magics['facebook'].sub('CALL_FACEBOOK', sentence)
@@ -138,7 +143,6 @@ class Preprocessing(object):
 		phrase = None
 		protected_phrase_regex = None
 		phrase = re.compile('|'.join(settings.protected))
-		print (phrase)
 
 		self.regex['protected'] = phrase if phrase else None
 
@@ -158,15 +162,17 @@ class Preprocessing(object):
 		return list(filter(lambda line: False if len(line) == 0 or line == '▁' else True, [token.strip() for token in line.split(' ▁')]))
 
 	def apply_bpe(self):
-		with open(settings.bpe_file, 'r', encoding='utf-8', buffering=131072) as bpe_file:
-			self.joins = {tuple(json.loads(k)): v for k, v in json.load(bpe_file).items()}
-			
+		if self.joins == None:
+			with open(settings.bpe_file, 'r', encoding='utf-8', buffering=131072) as bpe_file:
+				self.joins = {tuple(json.loads(k)): v for k, v in json.load(bpe_file).items()}
+
 		files = self.files
 		files.append('dev.src')
 		files.append('dev.tgt')
-		print(files)
 
 		for file in files:
+			print ('*** Applying BPE to {}'.format(file))
+
 			in_path = os.path.join(settings.data_formated, '_tmp_{}'.format(file))
 			out_path = os.path.join(settings.data_formated, file.replace('.src', '.bpe.src').replace('.tgt', '.bpe.tgt'))
 
@@ -181,16 +187,18 @@ class Preprocessing(object):
 							seq = pool.map(self.apply_bpe_sentence, lines)
 
 							written_lines += self.write_lines(out_file, seq, (written_lines==0))
-							print ('*** Written to bpe file: {}/{} lines ({}).'.format(count_lines, _LINES_IN_FILE[in_path], round(time.time() - start, 2)))
+							print ('\t*** Written to bpe file: {}/{} lines ({}s).'.format(count_lines, _LINES_IN_FILE[in_path], round(time.time() - start, 2)),  end='\r', flush=True)
 
 							if (len(lines) == 0):
 								break
 		self.learn_bpe = True
+		print('\n', end='\r', flush=True)
 
 	def create_vocab(self):
 		vocab_all = Counter()
 
 		for file in self.files:
+			print ('*** Starting creating vocab and tokenizing {}'.format(file))
 			in_path = os.path.join(settings.path_data, file)
 			out_path = os.path.join(settings.data_formated, '_tmp_{}'.format(file))
 			out_path_dev = os.path.join(settings.data_formated, file.replace('train_1', '_tmp_dev'))
@@ -200,27 +208,29 @@ class Preprocessing(object):
 			written_lines = 0
 
 			with open(in_path, 'r', encoding='utf-8', buffering=131072) as in_file:
-				with open(out_path, 'w', encoding='utf-8', buffering=131072) as out_file:
+				with open(out_path, 'w', encoding='utf-8') as out_file:
 					with open(out_path_dev, 'w', encoding='utf-8') as out_file_dev:
 						with Pool(processes=10) as pool:
-							for lines in read_lines(in_file, in_path, int(5e4)):
+							for lines in read_lines(in_file, in_path, int(1e4)):
 								count_lines += len(lines)
 				
 								tokens = pool.map(self.tokenizer, lines)
 
-								if written_lines < int(5e4):
+								if written_lines < _FILE_BATCH_SIZE[in_path]:
 									written_lines += self.write_lines(out_file_dev, tokens, (written_lines==0))
 								else:
-									written_lines += self.write_lines(out_file, tokens, (written_lines==int(5e4)))
+									written_lines += self.write_lines(out_file, tokens, (written_lines==int(_FILE_BATCH_SIZE[in_path])))
 
 								tokens = pool.map(self.split, tokens)
 
 								vocab_all.update(chain.from_iterable(tokens))
 
-								print ('*** Added to vocab: {}/{} lines ({}).'.format(count_lines, _LINES_IN_FILE[in_path], round(time.time() - start, 2)))
+								print ('\t*** Added to vocab: {}/{} lines ({}s).'.format(count_lines, _LINES_IN_FILE[in_path], round(time.time() - start, 2)),  end='\r', flush=True)
 
 								if (len(lines) == 0):
 									break
+
+		print('\n', end='\r', flush=True)
 
 		self.vocab = vocab_all
 		return vocab_all
@@ -328,10 +338,12 @@ class Preprocessing(object):
 			vocab.append((entity, freq))
 
 
-		print ('Learning BPE for vocab of {} tokens'.format(settings.vocab_wanted_size))
+		print ('*** Learning BPE for vocab of {} tokens'.format(settings.vocab_wanted_size))
+		_vocab = None
+		self.vocab = None
 
 		# List of joins per vocab
-		joins= []
+		joins = []
 
 		# Partial stats speeds up learning process - optimization for 'max' above
 		partial_stats = Counter(['', -1])
@@ -343,7 +355,7 @@ class Preprocessing(object):
 
 		# Learn until vocab will contain desired number of tokens
 		while train_vocab_len < settings.vocab_wanted_size:
-		    print('*** BPE {}/{}'.format(prev_train_vocab_len, settings.vocab_wanted_size), end='\r', flush=True) 
+		    print('\t *** BPE {}/{}'.format(prev_train_vocab_len, settings.vocab_wanted_size), end='\r', flush=True) 
 
 		    clean_train_vocab = False
 
@@ -488,12 +500,12 @@ class Preprocessing(object):
 		joins = dict(reversed([(v, i) for i, v in enumerate(joins)]))
 
 		with open(settings.bpe_file, 'w', encoding='utf-8', buffering=131072) as bpe_file:
-			print('SAVED')
 			json.dump({json.dumps(k):v for k,v in joins.items()}, bpe_file)
 
 		data_vocab = [entity for entity, _ in train_vocab.most_common()]
 		with open(os.path.join(settings.data_formated, 'vocab.bpe.src'), 'w', encoding='utf-8')  as vocab_file:
-			vocab_file.write(('\n'.join([settings.unk, settings.sos, settings.eos]) + '\n' + "\n".join(data_vocab[:settings.vocab_max_size])))
+			vocab_file.write(('\n'.join([settings.unk, settings.sos, settings.eos]) + '\n' + "\n".join(data_vocab)))
 
 		self.joins = joins
 		self.generate_vocab = True
+		print('\n', end='\r', flush=True)

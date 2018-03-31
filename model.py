@@ -1,19 +1,84 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Data Formatter
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
 	
 	This file is based and inspired by https://github.com/tensorflow/nmt
-"""
+'''
 
 import tensorflow as tf
 from tensorflow.python.layers import core as layers_core
 from settings import settings
-from model_utils import _create_rnn_cell, _gradient_clip
+from model_utils import create_rnn_cell, gradient_clip
 
 class Model(object):
+	def __init__(self, mode, iterator, vocab_table, reverse_vocab_table=None):
+		self.mode = mode
+		self.iterator = iterator
+		self.vocab_table = vocab_table
+		self.reverse_vocab_table = reverse_vocab_table
+
+
+		initializer = tf.random_uniform_initializer(minval=-settings.init_weight, maxval=settings.init_weight)
+		tf.get_variable_scope().set_initializer(initializer)
+
+		# Embeddings
+		self._embbedings()
+		self.batch_size = tf.size(self.iterator.source_sequence_length)
+
+		# Projection
+		with tf.variable_scope("build_network"):
+			with tf.variable_scope("decoder/output_projection"):
+				self.output_layer = layers_core.Dense(settings.vocab_size, use_bias=False, name="output_projection")
+
+		# Train graph
+		res = self.build_graph()
+
+		if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
+			self.train_loss = res[1]
+			self.word_count = tf.reduce_sum(self.iterator.source_sequence_length) + tf.reduce_sum(self.iterator.target_sequence_length)
+			self.predict_count = tf.reduce_sum(self.iterator.target_sequence_length)
+		elif self.mode == tf.contrib.learn.ModeKeys.INFER:
+			self.infer_logits, _, self.final_context_state, self.sample_id = res
+			self.sample_words = reverse_vocab_table.lookup(tf.to_int64(self.sample_id))
+
+		self.global_step = tf.Variable(0, trainable=False)
+		self.global_epoch = tf.Variable(0, trainable=False)
+
+		params = tf.trainable_variables()
+
+		if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
+			self.learning_rate = tf.constant(settings.learning_rate)
+			self.learning_rate = self._get_learning_rate_decay()
+			
+			# Optimizer
+			opt = tf.train.AdamOptimizer(self.learning_rate)
+
+			# Gradients
+			gradients = tf.gradients(self.train_loss, params, colocate_gradients_with_ops=True)
+			clipped_gradients, gradient_norm_summary, gradient_norm = gradient_clip(gradients, max_gradient_norm=settings.max_gradient_norm)
+
+			self.gradient_norm = gradient_norm
+			self.update = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
+
+			# Summary
+			self.train_summary = tf.summary.merge([
+				tf.summary.scalar("lr", self.learning_rate),
+				tf.summary.scalar("train_loss", self.train_loss),
+			] + gradient_norm_summary)
+
+		elif self.mode == tf.contrib.learn.ModeKeys.INFER:
+			self.infer_summary = tf.no_op()
+
+		self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=settings.num_keep_ckpts)
+
+		print('*** Trainable variables')
+		for param in params:
+			print("\t *** %s, %s, %s" % (param.name, str(param.get_shape()), param.op.device))
+
+
 	def decode(self, sess):
 		_, infer_summary, _, sample_words = self.infer(sess)
 		sample_words = sample_words.transpose()
@@ -49,7 +114,7 @@ class Model(object):
 
 	def _embbedings(self):
 		with tf.variable_scope("embeddings"):
-			self.embedding_encoder = tf.get_variable("embedding_share", [settings.vocab_size, settings.hparams.num_units])
+			self.embedding_encoder = tf.get_variable("embedding_share", [settings.vocab_size, settings.num_units])
 			self.embedding_decoder = self.embedding_encoder
 
 	def _max_iters(self, source_sequence_length):
@@ -84,7 +149,7 @@ class Model(object):
 				logits = self.output_layer(outputs.rnn_output)
 
 			elif self.mode == tf.contrib.learn.ModeKeys.INFER:
-				beam_width = settings.hparams.beam_width
+				beam_width = settings.beam_width
 
 
 				start_tokens = tf.fill([self.batch_size], tgt_sos_id)
@@ -134,7 +199,7 @@ class Model(object):
 
 		with tf.variable_scope("encoder") as scope:
 			encoder_emb_inputs = tf.nn.embedding_lookup(self.embedding_encoder, source)
-			num_bi_layers = int(settings.hparams.num_layers / 2) #settings.hparams.num_layers
+			num_bi_layers = int(settings.num_layers / 2) #settings.num_layers
 			encoder_outputs, bi_encoder_state = (
 					self._build_bidirectional_rnn(
 						inputs=encoder_emb_inputs,
@@ -155,11 +220,11 @@ class Model(object):
 			'''
 			encoder_emb_inputs = tf.nn.embedding_lookup(self.embedding_encoder, source)
 
-			encoder_cell = _create_rnn_cell(
-				num_units=settings.hparams.num_units,
-				num_layers=settings.hparams.num_layers,
+			encoder_cell = create_rnn_cell(
+				num_units=settings.num_units,
+				num_layers=settings.num_layers,
 				forget_bias=False,
-				dropout=settings.hparams.dropout,
+				dropout=settings.dropout,
 				mode=self.mode
 			)
 
@@ -170,36 +235,36 @@ class Model(object):
 		return encoder_outputs, encoder_state
 
 	def _encoder_cell(self, num_layers):
-		return _create_rnn_cell(
-				num_units=settings.hparams.num_units,
+		return create_rnn_cell(
+				num_units=settings.num_units,
 				num_layers=num_layers,
 				forget_bias=False,
-				dropout=settings.hparams.dropout,
+				dropout=settings.dropout,
 				mode=self.mode
 			)
 
 	def _decoder_cell(self, encoder_outputs, encoder_state):
 		'''
-		cell = _create_rnn_cell(
-			num_units=settings.hparams.num_units,
-			num_layers=settings.hparams.num_layers,
+		cell = create_rnn_cell(
+			num_units=settings.num_units,
+			num_layers=settings.num_layers,
 			forget_bias=False,
-			dropout=settings.hparams.dropout,
+			dropout=settings.dropout,
 			mode=self.mode
 		)
-		if self.mode == tf.contrib.learn.ModeKeys.INFER and hparams.beam_width > 0:
-			decoder_initial_state = tf.contrib.seq2seq.tile_batch(encoder_state, multiplier=settings.hparams.beam_width)
+		if self.mode == tf.contrib.learn.ModeKeys.INFER and beam_width > 0:
+			decoder_initial_state = tf.contrib.seq2seq.tile_batch(encoder_state, multiplier=settings.beam_width)
 		else:
 			decoder_initial_state = encoder_state
 
 		return cell, decoder_initial_state
 		'''
 
-		"""Build a RNN cell with attention mechanism that can be used by decoder."""
+		'''Build a RNN cell with attention mechanism that can be used by decoder.'''
 
 		dtype = tf.float32
 		iterator = self.iterator
-		beam_width = settings.hparams.beam_width
+		beam_width = settings.beam_width
 		memory = tf.transpose(encoder_outputs, [1, 0, 2])
 
 		if self.mode == tf.contrib.learn.ModeKeys.INFER:
@@ -211,21 +276,21 @@ class Model(object):
 			source_sequence_length = iterator.source_sequence_length
 			batch_size = self.batch_size
 
-		cell = _create_rnn_cell(
-			num_units=settings.hparams.num_units,
-			num_layers=settings.hparams.num_layers,
+		cell = create_rnn_cell(
+			num_units=settings.num_units,
+			num_layers=settings.num_layers,
 			forget_bias=False,
-			dropout=settings.hparams.dropout,
+			dropout=settings.dropout,
 			mode=self.mode
 		)
 
 		attention_mechanism = tf.contrib.seq2seq.LuongAttention(
-				settings.hparams.num_units, memory, 
+				settings.num_units, memory, 
 				memory_sequence_length=source_sequence_length, 
 				scale=True
 			)
 		cell = tf.contrib.seq2seq.AttentionWrapper(
-				cell, attention_mechanism, attention_layer_size=settings.hparams.num_units, 
+				cell, attention_mechanism, attention_layer_size=settings.num_units, 
 				alignment_history=False, output_attention=True, 
 				name="attention"
 			)
@@ -238,11 +303,11 @@ class Model(object):
 		return tensor.shape[0].value or tf.shape(tensor)[0]
 
 	def _get_learning_rate_decay(self):
-		"""Get learning rate decay."""
+		'''Get learning rate decay.'''
 		decay_factor = 0.5
-		start_decay_step = int(settings.hparams.num_train_steps * 2 / 3)
+		start_decay_step = int(settings.num_train_steps * 2 / 3)
 		decay_times = 4
-		remain_steps = settings.hparams.num_train_steps - start_decay_step
+		remain_steps = settings.num_train_steps - start_decay_step
 		decay_steps = int(remain_steps / decay_times)
 		return tf.cond(
 				self.global_step < start_decay_step,
@@ -267,8 +332,6 @@ class Model(object):
 		return loss
 
 	def build_graph(self):
-		print("* creating %s graph ..." % self.mode)
-
 		with tf.variable_scope("dynamic_seq2seq", dtype=tf.float32):
 			# Encoder
 			encoder_outputs, encoder_state = self._encoder()
@@ -282,69 +345,4 @@ class Model(object):
 				loss = None
 
 			return logits, loss, final_context_state, sample_id
-
-
-	def __init__(self, mode, iterator, vocab_table, reverse_vocab_table=None):
-		self.mode = mode
-		self.iterator = iterator
-		self.vocab_table = vocab_table
-		self.reverse_vocab_table = reverse_vocab_table
-
-
-		initializer = tf.random_uniform_initializer(minval=-settings.hparams.init_weight, maxval=settings.hparams.init_weight)
-		tf.get_variable_scope().set_initializer(initializer)
-
-		# Embeddings
-		self._embbedings()
-		self.batch_size = tf.size(self.iterator.source_sequence_length)
-
-		# Projection
-		with tf.variable_scope("build_network"):
-			with tf.variable_scope("decoder/output_projection"):
-				self.output_layer = layers_core.Dense(settings.vocab_size, use_bias=False, name="output_projection")
-
-		# Train graph
-		res = self.build_graph()
-
-		if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
-			self.train_loss = res[1]
-			self.word_count = tf.reduce_sum(self.iterator.source_sequence_length) + tf.reduce_sum(self.iterator.target_sequence_length)
-			self.predict_count = tf.reduce_sum(self.iterator.target_sequence_length)
-		elif self.mode == tf.contrib.learn.ModeKeys.INFER:
-			self.infer_logits, _, self.final_context_state, self.sample_id = res
-			self.sample_words = reverse_vocab_table.lookup(tf.to_int64(self.sample_id))
-
-		self.global_step = tf.Variable(0, trainable=False)
-		self.global_epoch = tf.Variable(0, trainable=False)
-
-		params = tf.trainable_variables()
-
-		if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
-			self.learning_rate = tf.constant(settings.hparams.learning_rate)
-			self.learning_rate = self._get_learning_rate_decay()
-			
-			# Optimizer
-			opt = tf.train.AdamOptimizer(self.learning_rate)
-
-			# Gradients
-			gradients = tf.gradients(self.train_loss, params, colocate_gradients_with_ops=True)
-			clipped_gradients, gradient_norm_summary, gradient_norm = _gradient_clip(gradients, max_gradient_norm=settings.hparams.max_gradient_norm)
-
-			self.gradient_norm = gradient_norm
-			self.update = opt.apply_gradients(zip(clipped_gradients, params), global_step=self.global_step)
-
-			# Summary
-			self.train_summary = tf.summary.merge([
-				tf.summary.scalar("lr", self.learning_rate),
-				tf.summary.scalar("train_loss", self.train_loss),
-			] + gradient_norm_summary)
-
-		elif self.mode == tf.contrib.learn.ModeKeys.INFER:
-			self.infer_summary = tf.no_op()
-
-		self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=settings.hparams.num_keep_ckpts)
-
-		print('*** Trainable variables')
-		for param in params:
-			print("\t *** %s, %s, %s" % (param.name, str(param.get_shape()), param.op.device))
 

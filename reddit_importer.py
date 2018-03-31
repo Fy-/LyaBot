@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Data Formatter
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
 
 	Inspired by https://github.com/pender/chatbot-rnn/tree/master/reddit-parse (https://github.com/pender/)
-"""
+'''
 
 import bz2
 import json

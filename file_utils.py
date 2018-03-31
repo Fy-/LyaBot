@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, File utils
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
-"""
+'''
 
 import regex as re
 from itertools import takewhile, repeat
@@ -12,7 +12,7 @@ import os
 import math
 
 _LINES_IN_FILE = {} # used by read_lines(), cache of lines per files if we open the same fat file twice (or more).
-
+_FILE_BATCH_SIZE = {}
 def divisor_generator(n):
 	''' Math sux '''
 	large_divisors = []
@@ -50,10 +50,11 @@ def read_lines(file, file_path, batch_size):
 	''' Read (bacth_size) lines from {file} at {file_path} an return zip(lines) 
 		Can be slow depending on Math Jesus. 
 	'''
-	if file_path not in _LINES_IN_FILE:
-		_LINES_IN_FILE[file_path] = lines_in_file(file_path)
+	_LINES_IN_FILE[file_path] = lines_in_file(file_path)
 
-	l = [iter(file)] * int(closest_divisor(_LINES_IN_FILE[file_path]+1, batch_size))
+	_FILE_BATCH_SIZE[file_path] = int(closest_divisor(_LINES_IN_FILE[file_path]+1, batch_size))
+
+	l = [iter(file)] * _FILE_BATCH_SIZE[file_path]
 
 	return zip(*l)
 

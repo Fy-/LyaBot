@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Model utils
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
@@ -7,7 +7,7 @@
 
 	This file is based and inspired by https://github.com/tensorflow/nmt
 
-"""
+'''
 
 import tensorflow as tf
 from tensorflow.python.ops import lookup_ops
@@ -31,6 +31,7 @@ def create_train_model(model_creator, file):
 		'graph' : graph,
 		'model' : model,
 		'iterator' : iterator,
+		'skip_count_placeholder' :skip_count_placeholder
 	})
 
 def create_infer_model(model_creator):
@@ -70,18 +71,18 @@ def load_model(model, ckpt, session, name):
 	start_time = time.time()
 	model.saver.restore(session, ckpt)
 	session.run(tf.tables_initializer())
-	print ('*** Loaded {} model with fresh parameters, time {:.2f}s'.format(name, (time.time()-start_time)))
+	print ('\n*** Loaded {} model with fresh parameters, time {:.2f}s'.format(name, (time.time()-start_time)))
 	return model
 
 def create_or_load_model(model, session, name):
 	start_time = time.time()
 	latest_ckpt = tf.train.latest_checkpoint(settings.path_model)
 	if latest_ckpt:
-		model = _load_model(model, latest_ckpt, session, name)
+		model = load_model(model, latest_ckpt, session, name)
 	else:
 		session.run(tf.global_variables_initializer())
 		session.run(tf.tables_initializer())
-		print ('*** Create {} model with fresh parameters, time {:.2f}s'.format(name, (time.time()-start_time)))
+		print ('\n*** Created {} model with fresh parameters, time {:.2f}s'.format(name, (time.time()-start_time)))
 
 	global_step = model.global_step.eval(session=session)
 	return model, global_step
@@ -90,9 +91,8 @@ def create_or_load_model(model, session, name):
 def single_cell(num_units, forget_bias, dropout, mode):
 	''' It's A BLOB or a Physarum polycephalum '''
 	dropout = dropout if mode == tf.contrib.learn.ModeKeys.TRAIN else 0.0
-	#single_cell = tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=forget_bias)
-	#single_cell = tf.contrib.rnn.NASCell(num_units)
-	single_cell = tf.contrib.rnn.GRUCell(num_units)
+	single_cell = tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=forget_bias)
+	#single_cell = tf.contrib.rnn.GRUCell(num_units)
 	if dropout > 0.0:
 		 single_cell = tf.contrib.rnn.DropoutWrapper(cell=single_cell, input_keep_prob=(1.0-dropout))
 
@@ -102,8 +102,8 @@ def create_rnn_cell(num_units, num_layers, forget_bias, dropout, mode):
 	''' Not a blob anymore :'( '''
 	cell_list = []
 	for i in range(num_layers):
-		single_cell = single_cell(num_units, forget_bias, dropout, mode)
-		cell_list.append(single_cell)
+		scell = single_cell(num_units, forget_bias, dropout, mode)
+		cell_list.append(scell)
 
 	if len(cell_list) == 1:
 		return cell_list[0]
@@ -112,7 +112,7 @@ def create_rnn_cell(num_units, num_layers, forget_bias, dropout, mode):
 
 
 def gradient_clip(gradients, max_gradient_norm):
-	"""Clipping gradients of a model."""
+	''' Clipping gradients of a model.'''
 	clipped_gradients, gradient_norm = tf.clip_by_global_norm(gradients, max_gradient_norm)
 	gradient_norm_summary = [tf.summary.scalar("grad_norm", gradient_norm)]
 	gradient_norm_summary.append(

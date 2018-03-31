@@ -3,6 +3,7 @@ _data/
 _data_formated/*
 _data_raw/*
 _model/*
+_model_bpe/*
 
 # Cause it's personal
 _.py

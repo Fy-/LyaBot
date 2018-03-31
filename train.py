@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
-"""
-	LyaBot, Data Formatter
+'''
+	LyaBot, Training
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
 
-"""
+'''
 import os
+import math
 import tensorflow as tf
+from time import time
 
 from model import Model
 from model_utils import create_or_load_model, create_train_model, create_infer_model
@@ -16,7 +18,7 @@ from settings import settings
 
 
 def init_stats():
-	"""Initialize statistics that we want to accumulate."""
+	''' Initialize statistics that we want to accumulate. '''
 	return {"step_time": 0.0, "loss": 0.0, "predict_count": 0.0, "total_count": 0.0, "grad_norm": 0.0}
 
 def update_stats(stats, start_time, step_result):
@@ -49,9 +51,7 @@ def print_step_info(global_step, info):
 		)
 
 def add_summary(summary_writer, global_step, tag, value):
-	"""Add a new summary to the current summary_writer.
-	Useful to log things that are not part of the training graph, e.g., tag=BLEU.
-	"""
+	''' Add a new summary to the current summary_writer. '''
 	summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
 	summary_writer.add_summary(summary, global_step)
 
@@ -88,24 +88,24 @@ if __name__ == "__main__":
 		}
 
 
-	run_infer_sample(infer_model, infer_sess, sample_src_data, sample_tgt_data, 5)
+	#run_infer_sample(infer_model, infer_sess, sample_src_data, sample_tgt_data, 5)
 
 
 	last_stats_step = global_step
 	last_save_step = global_step
 	start_train_time = time()
 	stats = init_stats()
-	skip_count = settings.hparams.batch_size * settings.hparams.epoch_step
+	skip_count = settings.batch_size * settings.epoch_step
 	train_sess.run(train_model.iterator.initializer, feed_dict={train_model.skip_count_placeholder: skip_count})
 
-	while global_step < settings.hparams.num_train_steps:
+	while global_step < settings.num_train_steps:
 		start_time = time()
 
 		try:
 			step_result = loaded_train_model.train(train_sess)
-			settings.hparams.epoch_step += 1
+			settings.epoch_step += 1
 		except tf.errors.OutOfRangeError:
-			settings.hparams.epoch_step = 0
+			settings.epoch_step = 0
 			print('*** Finished an epoch at step {}'.format(global_step))
 			train_sess.run(train_model.iterator.initializer, feed_dict={train_model.skip_count_placeholder: 0})
 			continue
@@ -113,9 +113,9 @@ if __name__ == "__main__":
 		global_step, info["learning_rate"], step_summary = update_stats(stats, start_time, step_result)
 		summary_writer.add_summary(step_summary, global_step)
 
-		if global_step - last_stats_step >= settings.step_per_shos:
+		if global_step - last_stats_step >= settings.step_per_show:
 			last_stats_step = global_step
-			is_overflow = process_stats(stats, info, global_step, steps_per_stats)
+			is_overflow = process_stats(stats, info, global_step, settings.step_per_show)
 			print_step_info(global_step, info)
 
 			if is_overflow:
@@ -127,11 +127,11 @@ if __name__ == "__main__":
 			run_infer_sample(infer_model, infer_sess, sample_src_data, sample_tgt_data, 5)
 
 			with open(os.path.join(settings.path_model, 'epoch'), 'w') as e:
-				e.write(settings.hparams.epoch_step)
+				e.write(str(settings.epoch_step))
 
 			last_save_step = global_step
 			loaded_train_model.saver.save(train_sess, os.path.join(settings.path_model, "model.ckpt"), global_step=global_step)
-			_add_summary(summary_writer, global_step, "train_ppl", info["train_ppl"])
+			add_summary(summary_writer, global_step, "train_ppl", info["train_ppl"])
 
 	summary_writer.close()
 

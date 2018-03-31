@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Prepare data
 	~~~~~~~~~~~~~~~~~~~~~~
 	:copyright: (c) 2018 by Gasquez Florian
 	:license: MIT, see LICENSE for more details.
 
-"""
+'''
 import argparse
 
 from preprocessing import Preprocessing
@@ -17,19 +17,19 @@ def main():
 	parser.add_argument('--no-apply_bpe', dest='no_apply_bpe', action='store_false') # If only apply or learn use json  (bpe_joins.json)
 
 
+
 	args = parser.parse_args()
 	format_data(args)
 
 def format_data(args):
-	preprocessing = Preprocessing() # Automaticly use all *.src/*tgr files in _data_raw.
+	preprocessing = Preprocessing(['train_1.src', 'train_1.tgt'])
 
-	if not no_vocab:
-		df.create_vocab()
-		df.learn_bpe(vocab)
+	if args.no_vocab:
+		preprocessing.create_vocab()
+		preprocessing.learn_bpe()
 
-	if not no_apply_bpe:
-		df.apply_bpe()	
-
+	if args.no_apply_bpe:
+		preprocessing.apply_bpe()	
 
 if __name__ == "__main__":
 	main()
