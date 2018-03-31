@@ -237,6 +237,10 @@ class Preprocessing(object):
 
 	def apply_bpe_sentence(self, sentence):
 		sentence_cache = {}
+		if self.joins == None:
+			with open(settings.bpe_file, 'r', encoding='utf-8', buffering=131072) as bpe_file:
+				self.joins = {tuple(json.loads(k)): v for k, v in json.load(bpe_file).items()}
+
 		joins = self.joins
 	
 		# Split sentence by ' ▁'

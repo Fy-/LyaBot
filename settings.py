@@ -29,7 +29,7 @@ class Settings(object):
 
 		''' Raw data (from reddit) and model '''
 		self.path_data = os.path.join(self.path, '_data_raw')
-		self.path_model = os.path.join(self.path, '_model_bpe')
+		self.path_model = os.path.join(self.path, '_model')
 		
 		''' Preprocessing '''
 		self.path_static = os.path.join(self.path, '_data_static')
@@ -43,8 +43,8 @@ class Settings(object):
 		self.vocab_size = self.vocab_wanted_size+3
 
 		''' Training '''
-		self.step_per_save = 100 
-		self.step_per_show = 1000
+		self.step_per_save = 1000
+		self.step_per_show = 100
 
 		''' Model '''
 		self.unk = "<unk>" # Same as https://www.youtube.com/watch?v=sSTVECyKlOg
@@ -53,7 +53,7 @@ class Settings(object):
 		self.unk_id = 0
 		self.sos_id = 1
 		self.eos_id = 2
-		self.batch_size =  128
+		self.batch_size =  192
 		self.num_layers =  2
 		self.num_units =  512
 		self.learning_rate  = 0.001

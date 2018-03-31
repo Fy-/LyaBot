@@ -55,7 +55,7 @@ class Model(object):
 			
 			# Optimizer
 			opt = tf.train.AdamOptimizer(self.learning_rate)
-
+			
 			# Gradients
 			gradients = tf.gradients(self.train_loss, params, colocate_gradients_with_ops=True)
 			clipped_gradients, gradient_norm_summary, gradient_norm = gradient_clip(gradients, max_gradient_norm=settings.max_gradient_norm)
@@ -165,7 +165,7 @@ class Model(object):
 					initial_state=decoder_initial_state,
 					beam_width=beam_width,
 					output_layer=self.output_layer,
-					length_penalty_weight=1.0
+					length_penalty_weight=0.0
 				)
 
 				# Dynamic decoding
@@ -238,7 +238,7 @@ class Model(object):
 		return create_rnn_cell(
 				num_units=settings.num_units,
 				num_layers=num_layers,
-				forget_bias=False,
+				forget_bias=0.1,
 				dropout=settings.dropout,
 				mode=self.mode
 			)
@@ -279,7 +279,7 @@ class Model(object):
 		cell = create_rnn_cell(
 			num_units=settings.num_units,
 			num_layers=settings.num_layers,
-			forget_bias=False,
+			forget_bias=0.1,
 			dropout=settings.dropout,
 			mode=self.mode
 		)
