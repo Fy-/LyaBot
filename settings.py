@@ -37,7 +37,7 @@ class Settings(object):
 		
 		''' Vocab & BPE '''
 		self.vocab_file = os.path.join(self.path_data, 'vocab.src')
-		self.vocab_wanted_size = 20000
+		self.vocab_wanted_size = 25000
 		self.data_formated = os.path.join(self.path, '_data_formated')
 		self.bpe_file = os.path.join(self.data_formated, 'bpe_joins.json')
 		self.vocab_size = self.vocab_wanted_size+3
@@ -53,10 +53,10 @@ class Settings(object):
 		self.unk_id = 0
 		self.sos_id = 1
 		self.eos_id = 2
-		self.batch_size =  192
+		self.batch_size =  128
 		self.num_layers =  2
-		self.num_units =  512
-		self.learning_rate  = 0.001
+		self.num_units =  768	
+		self.learning_rate  = 1.0 # 0.001
 		self.max_gradient_norm = 5.0
 		self.beam_width = 20
 		self.init_weight =  0.1

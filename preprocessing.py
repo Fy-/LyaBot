@@ -93,7 +93,7 @@ class Preprocessing(object):
 		sentence = sentence.strip()
 		sentence = html.unescape(sentence)
 		sentence = self.regex['multiples'].sub(r'\1\1\1\1\1', sentence)
-		sentence = sentence.replace('<unk>', '').replace('<s>', '').replace('</s>', '').replace('▁','_')
+		#sentence = sentence.replace('<unk>', '').replace('<s>', '').replace('</s>', '').replace('▁','_')
 
 		sentence = self.magics['facebook'].sub('CALL_FACEBOOK', sentence)
 		sentence = self.magics['youtube'].sub('CALL_YOUTUBE', sentence)
@@ -201,7 +201,9 @@ class Preprocessing(object):
 			print ('*** Starting creating vocab and tokenizing {}'.format(file))
 			in_path = os.path.join(settings.path_data, file)
 			out_path = os.path.join(settings.data_formated, '_tmp_{}'.format(file))
+
 			out_path_dev = os.path.join(settings.data_formated, file.replace('train_1', '_tmp_dev'))
+				
 
 			count_lines = 0
 			start = time.time()
@@ -211,15 +213,18 @@ class Preprocessing(object):
 				with open(out_path, 'w', encoding='utf-8') as out_file:
 					with open(out_path_dev, 'w', encoding='utf-8') as out_file_dev:
 						with Pool(processes=10) as pool:
-							for lines in read_lines(in_file, in_path, int(1e4)):
+							for lines in read_lines(in_file, in_path, int(4e4)):
 								count_lines += len(lines)
 				
 								tokens = pool.map(self.tokenizer, lines)
 
-								if written_lines < _FILE_BATCH_SIZE[in_path]:
-									written_lines += self.write_lines(out_file_dev, tokens, (written_lines==0))
+								if 'train' in in_path:
+									if written_lines < _FILE_BATCH_SIZE[in_path]:
+										written_lines += self.write_lines(out_file_dev, tokens, (written_lines==0))
+									else:
+										written_lines += self.write_lines(out_file, tokens, (written_lines==int(_FILE_BATCH_SIZE[in_path])))
 								else:
-									written_lines += self.write_lines(out_file, tokens, (written_lines==int(_FILE_BATCH_SIZE[in_path])))
+									written_lines += self.write_lines(out_file, tokens, (written_lines==0))
 
 								tokens = pool.map(self.split, tokens)
 

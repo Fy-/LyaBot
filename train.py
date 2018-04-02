@@ -56,7 +56,6 @@ def add_summary(summary_writer, global_step, tag, value):
 	summary_writer.add_summary(summary, global_step)
 
 if __name__ == "__main__":
-	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 	train_model = create_train_model(Model, 'train_1')
 	infer_model = create_infer_model(Model)
@@ -67,8 +66,8 @@ if __name__ == "__main__":
 
 	config = tf.ConfigProto(allow_soft_placement=True)
 	config.gpu_options.allow_growth = True
-	config.intra_op_parallelism_threads = 8
-	config.inter_op_parallelism_threads = 8
+	config.intra_op_parallelism_threads = 10
+	config.inter_op_parallelism_threads = 10
 	train_sess = tf.Session(config=config, graph=train_model.graph, )
 	infer_sess = tf.Session(config=config, graph=infer_model.graph, )
 

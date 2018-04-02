@@ -1,3 +1,12 @@
+# -*- coding: utf-8 -*-
+'''
+	LyaBot, Web version
+	~~~~~~~~~~~~~~~~~~~~~~
+	:copyright: (c) 2018 by Gasquez Florian
+	:license: MIT, see LICENSE for more details.
+	
+'''
+
 
 import tensorflow as tf
 
@@ -33,17 +42,21 @@ def main():
 
 		nmt_outputs, attention_summary = loaded_infer_model.decode(infer_sess)
 
-		s1 = get_sentence(nmt_outputs[0]) 
+		r = []
 
-		return jsonify({'reply': s1.decode("utf-8")})
+		for rr in nmt_outputs:
+			r.append(get_sentence(rr).decode("utf-8"))
+
+		return jsonify({'replies': r})
 
 
 	@app.route('/', methods=['GET'])
 	def chat():
 		return  'lol'
 
-	app.run(port=80)
-	print('Web service started.')
+	print('*** Web service started.')
+
+	app.run(port=5001, host='0.0.0.0')
 
 
 	return 'chat page'

@@ -26,12 +26,11 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--path_reddit', type=str, default=settings.path_reddit, help='reddit data directory')
 	parser.add_argument('--path_data', type=str, default=settings.path_data, help='directory to save the file')
-	parser.add_argument('--min_score', type=int, default=4, help='minimum reddit score')
+	parser.add_argument('--min_score', type=int, default=8, help='minimum reddit score')
 	parser.add_argument('--processes', type=int, default=10, help='processes')
 	parser.add_argument('--cache_size', type=int, default=int(1e6), help='max comments in cache (used for parenting)')
-	parser.add_argument('--batch_size', type=int, default=int(5e5), help='number of lines to read per iteration')
-	parser.add_argument('--lines_per_file', type=int, default=int(1e6), help='maximum numbe of lines per generated file')
-
+	parser.add_argument('--batch_size', type=int, default=int(1e5), help='number of lines to read per iteration')
+	parser.add_argument('--lines_per_file', type=int, default=int(3e6), help='maximum numbe of lines per generated file')
 	args = parser.parse_args()
 	parse(args)
 
@@ -66,7 +65,13 @@ class RedditComment(object):
 		return body
 
 	@staticmethod
-	def validate(comment, substring_blacklist, subreddit_whitelist):
+	def validate(comment, substring_blacklist, subreddit_whitelist, min_score):
+		if comment.score is None or comment.score < min_score:
+			return False
+
+		if comment.id is None:
+			return False
+
 		len_body = len(comment.body)
 		len_body_words = len(comment.body.split(' '))
 		if len_body < 4 or len_body > 300: 
@@ -75,57 +80,48 @@ class RedditComment(object):
 		if len_body_words < 2 or len_body_words > 50:
 			return False
 
-		if comment.id is None:
+		if comment.subreddit.lower() not in subreddit_whitelist:
 			return False
 
-		for substring in substring_blacklist:
-			if comment.body.find(substring) >= 0: return False
-
-		if comment.score is None or comment.score < 3:
+		if substring_blacklist.search(comment.body) != None:
 			return False
 
-		sr = RedditComment.check_subr(comment.subreddit, subreddit_whitelist)
-		if sr == False:
-			return False
-			
 		if not comment.id.startswith('t1_'):
 			comment.id = 't1_'+comment.id
 
 		return comment
 
-	@staticmethod
-	def check_subr(sr, subreddit_whitelist):
-		for subreddit in subreddit_whitelist:
-			if sr.lower() == subreddit.lower():
-				return True
-		return False
-
-
 
 class RedditParse(object):
 	''' It's a fucking prentious name for a class '''
-	def __init__(self, comments):
+	def __init__(self, comments, min_score):
 		self.subreddit_whitelist = [  
-			"marvel", "marvelstudios", "defenders", "jessicajones",
-			"webdev", "gamedev", "programming", "indiedev", 
-			"psychology", "psych", "psychologystudents", "clinicalpsych",
-			"philosophy", "askphilosophy", "philosophyofscience",
-			"atheism", "DebateAnAtheist", "atheist", "atheists",
-			"egalitarianism", "egalitarian",
-			"askreddit", "netflix",
-			"magic", "cardmagic",
-			"python", "learnpython", "tenserflow", "unity3d", "unity2d",
-			"tesla", "physics", "asksciencediscussion", "science",
-			"geek", "geekygirls", "opensource", "comicbooks", "technology",
-			"the100", "gameofthrones", "housemd", "sense8", "suits"
+			'marvel', 'marvelstudios', 'defenders', 'jessicajones',
+			'webdev', 'gamedev', 'programming', 'indiedev', 
+			'psychology', 'psych', 'psychologystudents', 'clinicalpsych',
+			'philosophy', 'askphilosophy', 'philosophyofscience',
+			'atheism', 'DebateAnAtheist', 'atheist', 'atheists',
+			'egalitarianism', 'egalitarian',
+			'askreddit', 'netflix', 'needafriend'
+			'magic', 'cardmagic',
+			'python', 'learnpython', 'tenserflow', 'unity3d', 'unity2d',
+			'tesla', 'physics', 'asksciencediscussion', 'science',
+			'geek', 'geekygirls', 'opensource', 'comicbooks', 'technology',
+			'the100', 'gameofthrones', 'housemd', 'sense8', 'suits',
+			'hearthstone', 'pathofexile', 'factorio', 'onepiece', 'fairytail',
+			'funny', 'todayilearned', 'gaming', 'movies'
 		]
 
 		self.substring_blacklist = [
-				'\n', '[', ' r/',' u/', '/r/', '/u/',
-				'reddit', 'Reddit', 'upvote', 'OOC:'
-				'downvote', 'upvoting', 'downvoting',
+				'\n', '\[', ' r/',' u/', '/r/', '/u/',
+				'reddit',  'upvote', 'OOC:'
+				'downvote', 'upvoting', 'downvoting', 
+				'username checks out', 'username checksout'
 			]
 
+		self.substring_blacklist = re.compile('|'.join(self.substring_blacklist), re.IGNORECASE)
+
+		self.min_score = min_score
 		self.comments = comments
 		self._comments = {}	
 
@@ -160,7 +156,7 @@ class RedditParse(object):
 	def read_comment(self, line):
 		if (line[-1] == '}' or line[-2] == '}' and len(line) <= 700):
 			json_comment = json.loads(line)
-			comment = RedditComment.validate(RedditComment(json_comment), self.substring_blacklist, self.subreddit_whitelist)
+			comment = RedditComment.validate(RedditComment(json_comment), self.substring_blacklist, self.subreddit_whitelist, self.min_score)
 			if comment != False:
 				self.comments[comment.id] = comment
 				return 1
@@ -170,7 +166,7 @@ class RedditParse(object):
 def parse(args):
 	files = glob.glob('{}/*.bz2'.format(args.path_reddit))
 	comments = Manager().dict()
-	reddit_parse = RedditParse(comments)
+	reddit_parse = RedditParse(comments, args.min_score)
 	output_index = 1
 	output_from = open(os.path.join(args.path_data, 'train_{}.src'.format(output_index)), mode="wt", encoding='utf-8')
 	output_to = open(os.path.join(args.path_data, 'train_{}.tgt'.format(output_index)), mode="wt", encoding='utf-8')
@@ -213,9 +209,10 @@ def parse(args):
 							output_from.close()
 							output_to.close()
 							output_from = open(os.path.join(args.path_data, 'train_{}.src'.format(output_index)), mode="wt", encoding='utf-8')
-							output_to = open(os.path.join(args.path_data, 'train_{}.tgt'.format(output_index)), mode="wt", encoding='utf-8')						
+							output_to = open(os.path.join(args.path_data, 'train_{}.tgt'.format(output_index)), mode="wt", encoding='utf-8')	
+
 						comments = Manager().dict()
-						reddit_parse = RedditParse(comments)
+						reddit_parse = RedditParse(comments, args.min_score)
 						count_read = 0
 						count_processed = 0
 						count_saved = 0
@@ -232,7 +229,7 @@ def parse(args):
 				print ('\t*** Saved {} new comments. TOTAL: {} comments'.format(count_saved, total))
 
 				comments = Manager().dict()
-				reddit_parse = RedditParse(comments)
+				reddit_parse = RedditParse(comments, args.min_score)
 				count_read = 0
 				count_processed = 0
 				count_saved = 0

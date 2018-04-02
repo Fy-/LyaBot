@@ -13,6 +13,7 @@ import math
 
 _LINES_IN_FILE = {} # used by read_lines(), cache of lines per files if we open the same fat file twice (or more).
 _FILE_BATCH_SIZE = {}
+
 def divisor_generator(n):
 	''' Math sux '''
 	large_divisors = []
@@ -28,15 +29,11 @@ def divisor_generator(n):
 def closest_divisor(n, t):
 	''' See above '''
 	r = 0
-	d = 0
+	d = math.inf 
 	for i in list(divisor_generator(n)):
-		if r == 0:
+		if d > math.fabs(t-i):
 			r = i
-			d = abs(r-t)
-
-		if d > abs(i-t):
-			r = i
-			d = abs(r-t)
+			d = math.fabs(t-r)
 
 	return r
 
@@ -52,7 +49,9 @@ def read_lines(file, file_path, batch_size):
 	'''
 	_LINES_IN_FILE[file_path] = lines_in_file(file_path)
 
-	_FILE_BATCH_SIZE[file_path] = int(closest_divisor(_LINES_IN_FILE[file_path]+1, batch_size))
+	_FILE_BATCH_SIZE[file_path] = int(closest_divisor(_LINES_IN_FILE[file_path], batch_size))
+
+	# @TODO: If closest_divisor == 1 or < 1e4 think of a different way.
 
 	l = [iter(file)] * _FILE_BATCH_SIZE[file_path]
 

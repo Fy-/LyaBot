@@ -17,8 +17,6 @@ class DataIterator(object):
 		src_eos_id = tf.cast(src_vocab_table.lookup(tf.constant(settings.eos)), tf.int32)
 		src_dataset = src_dataset.map(lambda src: tf.string_split([src]).values)
 
-		if src_max_len:
-			src_dataset = src_dataset.map(lambda src: src[:src_max_len])
 
 		# Convert the word strings to ids
 		src_dataset = src_dataset.map(lambda src: tf.cast(src_vocab_table.lookup(src), tf.int32))
@@ -69,9 +67,11 @@ class DataIterator(object):
 
 		src_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.src'))
 		tgt_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.tgt'))
+		src_path_data = os.path.join(settings.data_formated, '{}{}'.format('data', '.bpe.src'))
+		tgt_path_data = os.path.join(settings.data_formated, '{}{}'.format('data', '.bpe.src'))
 
-		src_dataset = tf.data.TextLineDataset(src_path)
-		tgt_dataset = tf.data.TextLineDataset(tgt_path)
+		src_dataset = tf.data.TextLineDataset([src_path_data, src_path])
+		tgt_dataset = tf.data.TextLineDataset([tgt_path_data, tgt_path])
 
 		src_eos_id = tf.cast(vocab_table.lookup(tf.constant(settings.eos)), tf.int32)
 		tgt_sos_id = tf.cast(vocab_table.lookup(tf.constant(settings.sos)), tf.int32)
@@ -91,7 +91,7 @@ class DataIterator(object):
 			lambda src, tgt: (
 				tf.string_split([src]).values, tf.string_split([tgt]).values
 			),
-			num_parallel_calls=8).prefetch(output_buffer_size)
+			num_parallel_calls=10).prefetch(output_buffer_size)
 
 		# Filter zero length input sequences. 
 		dataset = dataset.filter(lambda src, tgt: tf.logical_and(tf.size(src) > 0, tf.size(tgt) > 0))
@@ -102,7 +102,7 @@ class DataIterator(object):
 				tf.cast(vocab_table.lookup(src), tf.int32),
 				tf.cast(vocab_table.lookup(tgt), tf.int32)
 			),
-			num_parallel_calls=8).prefetch(output_buffer_size)
+			num_parallel_calls=10).prefetch(output_buffer_size)
 
 		# Create a tgt_input prefixed with <sos> and a tgt_output suffixed with <eos>.
 		dataset = dataset.map(
@@ -110,7 +110,7 @@ class DataIterator(object):
 				tf.concat(([tgt_sos_id], tgt), 0),
 				tf.concat((tgt, [tgt_eos_id]), 0)
 			),
-			num_parallel_calls=8).prefetch(output_buffer_size)
+			num_parallel_calls=10).prefetch(output_buffer_size)
 
 		# Add in sequence lengths.
 		dataset = dataset.map(
@@ -121,7 +121,7 @@ class DataIterator(object):
 				tf.size(src), 
 				tf.size(tgt_in)
 			),
-			num_parallel_calls=8).prefetch(output_buffer_size)
+			num_parallel_calls=10).prefetch(output_buffer_size)
 
 		def batching_func(x):
 			return x.padded_batch(

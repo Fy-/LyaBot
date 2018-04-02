@@ -54,8 +54,10 @@ class Model(object):
 			self.learning_rate = self._get_learning_rate_decay()
 			
 			# Optimizer
-			opt = tf.train.AdamOptimizer(self.learning_rate)
-			
+			#opt = tf.train.AdamOptimizer(self.learning_rate)
+			opt = tf.train.GradientDescentOptimizer(self.learning_rate)
+			tf.summary.scalar("lr", self.learning_rate)
+
 			# Gradients
 			gradients = tf.gradients(self.train_loss, params, colocate_gradients_with_ops=True)
 			clipped_gradients, gradient_norm_summary, gradient_norm = gradient_clip(gradients, max_gradient_norm=settings.max_gradient_norm)
@@ -118,11 +120,10 @@ class Model(object):
 			self.embedding_decoder = self.embedding_encoder
 
 	def _max_iters(self, source_sequence_length):
+		''' Max decoding steps at infer time '''
 		decoding_length_factor = 2.0
 		max_encoder_length = tf.reduce_max(source_sequence_length)
-		maximum_iterations = tf.to_int32(
-				tf.round(tf.to_float(max_encoder_length) * decoding_length_factor)
-			)
+		maximum_iterations = tf.to_int32(tf.round(tf.to_float(max_encoder_length) * decoding_length_factor))
 		return maximum_iterations
 
 	def _decoder(self, encoder_outputs, encoder_state):
@@ -149,7 +150,7 @@ class Model(object):
 				logits = self.output_layer(outputs.rnn_output)
 
 			elif self.mode == tf.contrib.learn.ModeKeys.INFER:
-				beam_width = settings.beam_width
+				beam_width = settings.beam_width	
 
 
 				start_tokens = tf.fill([self.batch_size], tgt_sos_id)
@@ -165,7 +166,7 @@ class Model(object):
 					initial_state=decoder_initial_state,
 					beam_width=beam_width,
 					output_layer=self.output_layer,
-					length_penalty_weight=0.0
+					length_penalty_weight=1.0
 				)
 
 				# Dynamic decoding
