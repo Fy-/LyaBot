@@ -103,10 +103,7 @@ export default {
             input: "",
             lyaIsTyping: null,
             threeDotLoader: "",
-            items: [
-               { datetime: Date.now(), data: "Hello, I'm efyx" },
-               { datetime: Date.now(), data: "Sup' dude ?", fromLya: true },
-            ],
+            items: [],
         }
     },
     beforeMount: function () {
@@ -119,6 +116,7 @@ export default {
     methods: {
         scroll() {
             setTimeout(() => {
+                console.log(this.$refs.scroller.scrollTop, this.$refs.scroller.scrollHeight);
                 this.$refs.scroller.scrollTop = this.$refs.scroller.scrollHeight + 100;
             }, 1);
         },
@@ -149,11 +147,10 @@ export default {
             const item = { datetime: Date.now(), data: this.input };
             this.items.push(item);
 
-            scroll();
-
             this.lyaIsTyping = null;
             setTimeout(() => {
                 this.isTyping();
+                this.scroll();
             }, 1);
 
             const start = Date.now();
