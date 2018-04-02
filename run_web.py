@@ -10,7 +10,7 @@
 
 import tensorflow as tf
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from settings import settings
 from model_utils import create_or_load_model, create_infer_model
 from misc_utils import safe_exp, format_spm_text, load_data, get_sentence, run_infer_sample
@@ -47,7 +47,9 @@ def main():
 		for rr in nmt_outputs:
 			r.append(get_sentence(rr).decode("utf-8"))
 
-		return jsonify({'replies': r})
+		resp = make_response(jsonify({'replies': r}))
+		resp.headers['Access-Control-Allow-Origin'] = '*'
+		return resp
 
 
 	@app.route('/', methods=['GET'])
