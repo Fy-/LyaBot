@@ -1,5 +1,5 @@
 # LyaBot - A "smart" chatbot
-First, this is not like a real project or anything it was more like a learning experiencce for me at that's why I decided to make this repo public. The code is based and inspired by multiple greats projects:
+This is not a real project, it was more like a learning experiencce for me at that's why I decided to make this repo public. The code is based and inspired by cool projects:
 - https://github.com/daniel-kukiela/nmt-chatbot (a cool chatbot, please check it out)
 - https://github.com/chiphuyen/stanford-tensorflow-tutorials/tree/master/assignments/chatbot (gread tutorial for previous version of tensorflow)
 - https://gist.github.com/higepon/eb81ba0f6663a57ff1908442ce753084 (minimum seq2seq implementation with tensorflow)
