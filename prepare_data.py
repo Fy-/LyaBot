@@ -9,7 +9,7 @@
 import argparse
 
 from preprocessing import Preprocessing
-
+from bpe import BPE
 
 def main(): 
 	parser = argparse.ArgumentParser()
@@ -23,7 +23,6 @@ def main():
 
 def format_data(args):
 	preprocessing = Preprocessing(['data.src', 'data.tgt', 'train_1.src', 'train_1.tgt'])
-	print(args)
 	if args.no_vocab:
 		preprocessing.create_vocab()
 		preprocessing.learn_bpe()

@@ -11,19 +11,17 @@
 
 import tensorflow as tf
 from tensorflow.python.ops import lookup_ops
-
 import time, os
-
 from settings import settings
 from iterator_utils import DataIterator
-from preprocessing import Preprocessing
+from vocab import Vocab
 
 def create_train_model(model_creator, file):
 	graph = tf.Graph()
 	with graph.as_default(), tf.container("train"):
 		skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
 
-		vocab_table, _ = Preprocessing.create_vocab_tables()
+		vocab_table, _ = Vocab.create_vocab_tables()
 		iterator = DataIterator.get_iterator(file, vocab_table, skip_count=skip_count_placeholder)
 		model = model_creator(mode=tf.contrib.learn.ModeKeys.TRAIN, iterator=iterator, vocab_table=vocab_table)
 
@@ -39,7 +37,7 @@ def create_infer_model(model_creator):
 
 	with graph.as_default(), tf.container("infer"):
 
-		vocab_table, _ = Preprocessing.create_vocab_tables()
+		vocab_table, _ = Vocab.create_vocab_tables()
 		reverse_vocab_table = lookup_ops.index_to_string_table_from_file(os.path.join(settings.data_formated, 'vocab.bpe.src'), default_value=settings.unk)
 
 		src_placeholder = tf.placeholder(shape=[None], dtype=tf.string)

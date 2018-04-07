@@ -28,7 +28,7 @@ class Settings(object):
 		self.path_reddit = 'D:\\RED\\2017\\2016' # YOUR REDDIT FOLDER (With .bz2 files)
 
 		''' Raw data (from reddit) and model '''
-		self.path_data = os.path.join(self.path, '_data_raw')
+		self.path_data = os.path.join(self.path, '_data')
 		self.path_model = os.path.join(self.path, '_model')
 		
 		''' Preprocessing '''
@@ -37,7 +37,7 @@ class Settings(object):
 		
 		''' Vocab & BPE '''
 		self.vocab_file = os.path.join(self.path_data, 'vocab.src')
-		self.vocab_wanted_size = 25000
+		self.vocab_wanted_size = 15000
 		self.data_formated = os.path.join(self.path, '_data_formated')
 		self.bpe_file = os.path.join(self.data_formated, 'bpe_joins.json')
 		self.vocab_size = self.vocab_wanted_size+3
@@ -55,8 +55,8 @@ class Settings(object):
 		self.eos_id = 2
 		self.batch_size =  128
 		self.num_layers =  2
-		self.num_units =  768	
-		self.learning_rate  = 1.0 # 0.001
+		self.num_units =  1024	
+		self.learning_rate  = 0.001 # 0.001
 		self.max_gradient_norm = 5.0
 		self.beam_width = 20
 		self.init_weight =  0.1
@@ -67,10 +67,15 @@ class Settings(object):
 		self.epoch_step = 0
 
 
-		''' It's ugly '''
+		self.epoch_step = 0
+		if os.path.isfile(os.path.join(self.path_model, 'epoch_step')):
+			with open(os.path.join(self.path_model, 'epoch_step')) as e:
+				self.epoch_step = int(e.readlines()[0])
+
+		self.epoch = 0
 		if os.path.isfile(os.path.join(self.path_model, 'epoch')):
 			with open(os.path.join(self.path_model, 'epoch')) as e:
-				self.epoch_step = int(e.readlines()[0])
+				self.epoch = int(e.readlines()[0])
 				
 	def set_from_file(self, file):
 		''' Just a tool to set a variable from a text file, for example, a regex list. 

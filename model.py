@@ -54,9 +54,7 @@ class Model(object):
 			self.learning_rate = self._get_learning_rate_decay()
 			
 			# Optimizer
-			#opt = tf.train.AdamOptimizer(self.learning_rate)
-			opt = tf.train.GradientDescentOptimizer(self.learning_rate)
-			tf.summary.scalar("lr", self.learning_rate)
+			opt = tf.train.AdamOptimizer(self.learning_rate)
 
 			# Gradients
 			gradients = tf.gradients(self.train_loss, params, colocate_gradients_with_ops=True)
@@ -296,8 +294,8 @@ class Model(object):
 				name="attention"
 			)
 
-		decoder_initial_state = cell.zero_state(batch_size, dtype)
-
+		#decoder_initial_state = cell.zero_state(batch_size, dtype)
+		decoder_initial_state = cell.zero_state(batch_size, dtype).clone(cell_state=encoder_state)
 		return cell, decoder_initial_state
 
 	def get_max_time(self, tensor):

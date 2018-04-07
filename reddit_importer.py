@@ -9,7 +9,7 @@
 '''
 
 import bz2
-import json
+import ujson as json
 import regex as re
 import os
 import sys

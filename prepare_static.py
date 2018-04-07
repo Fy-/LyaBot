@@ -135,6 +135,8 @@ def main():
 
 					src_f.write(prepare(html, dot, dash, spaces, src_line) + '\n')
 					tgt_f.write(prepare(html, dot, dash, spaces, target_line) + '\n')
-
+					src_f.write(prepare(html, dot, dash, spaces, src_line) + '\n')
+					tgt_f.write(prepare(html, dot, dash, spaces, target_line) + '\n')
+					
 if __name__ == "__main__":
 	main()

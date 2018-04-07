@@ -4,7 +4,7 @@ _data_formated/*
 _data_raw/*
 _model/*
 _model_bpe/*
-
+_env/*
 # Cause it's personal
 _.py
 infer.py
