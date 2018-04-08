@@ -1,9 +1,24 @@
 # -*- coding: utf-8 -*-
 '''
 	LyaBot, File utils
-	~~~~~~~~~~~~~~~~~~~~~~
-	:copyright: (c) 2018 by Gasquez Florian
-	:license: MIT, see LICENSE for more details.
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	LyaBot
+	Copyright (C) 2018 Florian Gasquez <m@fy.to>
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
 
 import regex as re
@@ -41,7 +56,7 @@ def lines_in_file(file_path):
 	''' "Fast" way to count lines in a file '''
 	f = open(file_path, 'rb')
 	buf_gen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
-	return sum( buf.count(b'\n') for buf in buf_gen ) +1
+	return sum( buf.count(b'\n') for buf in buf_gen )
 
 def read_lines(file, file_path, batch_size):
 	''' Read (bacth_size) lines from {file} at {file_path} an return zip(lines) 

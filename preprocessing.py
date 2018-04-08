@@ -1,10 +1,24 @@
 # -*- coding: utf-8 -*-
 '''
 	LyaBot, Preprocessing
-	~~~~~~~~~~~~~~~~~~~~~~
-	:copyright: (c) 2018 by Gasquez Florian
-	:license: MIT, see LICENSE for more details.
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	LyaBot
+	Copyright (C) 2018 Florian Gasquez <m@fy.to>
 
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	This file is based and inspired by:
 		- https://github.com/daniel-kukiela/nmt-chatbot 
 		- https://github.com/rsennrich/subword-nmt
@@ -65,7 +79,7 @@ class Preprocessing(object):
 			with open(in_path, 'r', encoding='utf-8', buffering=131072) as in_file:
 				with open(out_path, 'w', encoding='utf-8') as out_file:
 					with Pool(processes=10) as pool:
-						for lines in read_lines(in_file, in_path, int(4e4)):
+						for lines in read_lines(in_file, in_path, int(1e4)):
 							count_lines += len(lines)
 			
 							tokens = pool.map(vocab_obj.tokenizer, lines)
@@ -76,7 +90,7 @@ class Preprocessing(object):
 									with open(out_path_test, 'w', encoding='utf-8') as out_file_test:
 										with open(out_path_dev, 'w', encoding='utf-8') as out_file_dev:
 											for token in tokens:
-												if test_written == False and count_written < 256:
+												if test_written == False and count_written < 512:
 													written_lines += self.write_lines(out_file_test, [token], (written_lines== 0))
 												else:
 													if test_written == False:

@@ -1,10 +1,24 @@
 # -*- coding: utf-8 -*-
 '''
 	LyaBot, Data Formatter
-	~~~~~~~~~~~~~~~~~~~~~~
-	:copyright: (c) 2018 by Gasquez Florian
-	:license: MIT, see LICENSE for more details.
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	LyaBot
+	Copyright (C) 2018 Florian Gasquez <m@fy.to>
 
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	Inspired by https://github.com/pender/chatbot-rnn/tree/master/reddit-parse (https://github.com/pender/)
 '''
 
@@ -16,6 +30,7 @@ import sys
 import bz2
 import glob
 import argparse
+import lzma
 
 from file_utils import xz_read_lines
 from multiprocessing import Pool, Manager
@@ -26,7 +41,7 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--path_reddit', type=str, default=settings.path_reddit, help='reddit data directory')
 	parser.add_argument('--path_data', type=str, default=settings.path_data, help='directory to save the file')
-	parser.add_argument('--min_score', type=int, default=8, help='minimum reddit score')
+	parser.add_argument('--min_score', type=int, default=5, help='minimum reddit score')
 	parser.add_argument('--processes', type=int, default=10, help='processes')
 	parser.add_argument('--cache_size', type=int, default=int(1e6), help='max comments in cache (used for parenting)')
 	parser.add_argument('--batch_size', type=int, default=int(1e5), help='number of lines to read per iteration')
@@ -164,7 +179,7 @@ class RedditParse(object):
 		return 0
 
 def parse(args):
-	files = glob.glob('{}/*.bz2'.format(args.path_reddit))
+	files = glob.glob('{}/*.xz'.format(args.path_reddit))
 	comments = Manager().dict()
 	reddit_parse = RedditParse(comments, args.min_score)
 	output_index = 1
@@ -183,7 +198,7 @@ def parse(args):
 		print ('*** STARTING FILE {} : GOOD LUCK! ^_^'.format(file))
 
 		with Pool(processes=args.processes) as p:
-			with bz2.open(file, "rt") as raw_data:
+			with lzma.open(file, "rt") as raw_data:
 				for lines in xz_read_lines(raw_data, args.batch_size):
 
 					count_read += sum(p.map(reddit_parse.read_comment, lines))

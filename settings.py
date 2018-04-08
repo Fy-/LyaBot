@@ -1,10 +1,24 @@
 # -*- coding: utf-8 -*-
 '''
 	LyaBot, Settings
-	~~~~~~~~~~~~~~~~~~~~~~
-	:copyright: (c) 2018 by Gasquez Florian
-	:license: MIT, see LICENSE for more details.
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	LyaBot
+	Copyright (C) 2018 Florian Gasquez <m@fy.to>
 
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
 
 import os
@@ -23,9 +37,9 @@ class Settings(object):
 			- 2015 : https://cinnamon.dewarim.com/torrents/reddit-2015.torrent (68gb)
 			- 2016 : https://cinnamon.dewarim.com/torrents/reddit-2016.torrent (81gb)
 			- 2017 : https://cinnamon.dewarim.com/torrents/reddit-2017.torrent (23gb (only 3 month))
-			- http://files.pushshift.io/reddit/comments/ (Look why they need donations)
+			- http://files.pushshift.io/reddit/comments/ (please consider making a donation)
 )		'''
-		self.path_reddit = 'D:\\RED\\2017\\2016' # YOUR REDDIT FOLDER (With .bz2 files)
+		self.path_reddit = 'D:\\RED' # YOUR REDDIT FOLDER (With .bz2 files)
 
 		''' Raw data (from reddit) and model '''
 		self.path_data = os.path.join(self.path, '_data')
@@ -40,7 +54,7 @@ class Settings(object):
 		
 		''' Vocab & BPE '''
 		self.vocab_file = os.path.join(self.path_data, 'vocab.src')
-		self.vocab_wanted_size = 15000
+		self.vocab_wanted_size = 50000
 		self.data_formated = os.path.join(self.path, '_data_formated')
 		self.bpe_file = os.path.join(self.data_formated, 'bpe_joins.json')
 		self.vocab_size = self.vocab_wanted_size+3

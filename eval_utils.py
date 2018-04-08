@@ -1,10 +1,25 @@
 # -*- coding: utf-8 -*-
 '''
 	LyaBot, Eval utils
-	~~~~~~~~~~~~~~~~~~~~~~
-	:copyright: (c) 2018 by Gasquez Florian
-	:license: MIT, see LICENSE for more details.
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	LyaBot
+	Copyright (C) 2018 Florian Gasquez <m@fy.to>
 
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	This file is inspired by https://github.com/tensorflow/nmt
 '''
 import os
 import random
@@ -78,7 +93,7 @@ def format_spm_text_str(symbols):
 	return u"".join(words.split()).replace(u'\u2581', u' ').strip()
 
 def run_eval(infer_model, infer_sess, summary_writer, save_best=True):
-	print ('*** Starting eval on test.bpe.src ...')
+	print ('*** Starting EVAL on test.bpe.src ...\n')
 	with infer_model.graph.as_default():
 		loaded_infer_model, global_step = create_or_load_model(infer_model.model, infer_sess, 'infer')
 
@@ -103,6 +118,7 @@ def run_eval(infer_model, infer_sess, summary_writer, save_best=True):
 			setattr(settings, best_metric_label, scores[metric])
 			infer_model.model.saver.save(infer_sess, os.path.join(getattr(settings, 'path_' + best_metric_label), 'model.ckpt'), global_step=global_step)
 	settings.save()
+	print('\n')
 
 def decode_and_evaluate(model, sess, output, ref_file):
 	with open(output, mode='w', encoding='utf-8') as reply_file:
