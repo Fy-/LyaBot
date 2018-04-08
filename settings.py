@@ -74,7 +74,6 @@ class Settings(object):
 		self.batch_size =  128
 		self.num_layers =  2
 		self.num_units =  512	
-		self.learning_rate  = [0.001, 0.0001, 0.00001, 0.00001]
 		self.max_gradient_norm = 5.0
 		self.beam_width = 20
 		self.init_weight =  0.1
