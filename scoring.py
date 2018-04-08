@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 	LyaBot, Scoring
 	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	LyaBot
@@ -19,7 +19,7 @@
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-"""
+'''
 from difflib import SequenceMatcher
 from collections import OrderedDict
 import regex as re
