@@ -55,7 +55,7 @@ class DataIterator(object):
 			})
 
 	@staticmethod
-	def get_iterator(file, vocab_table, skip_count=None, reshuffle_each_iteration=True):
+	def get_iterator(vocab_table, file=None, src_dataset=None, tgt_dataset=None, skip_count=None, reshuffle_each_iteration=True):
 		''' Tensorflow is cool, even for reading and parsing files '''
 		
 
@@ -65,21 +65,17 @@ class DataIterator(object):
 
 		batch_size = settings.batch_size
 
-		src_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.src'))
-		tgt_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.tgt'))
-		src_path_data = os.path.join(settings.data_formated, '{}{}'.format('data', '.bpe.src'))
-		tgt_path_data = os.path.join(settings.data_formated, '{}{}'.format('data', '.bpe.src'))
-
-		src_dataset = tf.data.TextLineDataset([src_path_data, src_path])
-		tgt_dataset = tf.data.TextLineDataset([tgt_path_data, tgt_path])
+		if file != None:
+			src_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.src'))
+			tgt_path = os.path.join(settings.data_formated, '{}{}'.format(file, '.bpe.tgt'))
+			src_dataset = tf.data.TextLineDataset([src_path])
+			tgt_dataset = tf.data.TextLineDataset([tgt_path])
 
 		src_eos_id = tf.cast(vocab_table.lookup(tf.constant(settings.eos)), tf.int32)
 		tgt_sos_id = tf.cast(vocab_table.lookup(tf.constant(settings.sos)), tf.int32)
 		tgt_eos_id = tf.cast(vocab_table.lookup(tf.constant(settings.eos)), tf.int32)
 
-
 		dataset = tf.data.Dataset.zip((src_dataset, tgt_dataset))
-		dataset = dataset.shard(1, 0)
 
 		if skip_count is not None:
 			dataset = dataset.skip(skip_count)

@@ -97,10 +97,10 @@ def main():
 			src_lines_low = '\n'.join(src_lines_lower)+'\n'
 			tgt_lines_low = '\n'.join(tgt_lines_lower)+'\n'
 
-			for i in range(100):
+			for i in range(1000):
 				src_f.write(src_lines)
 				tgt_f.write(tgt_lines)
-			for i in range(100):
+			for i in range(1000):
 				src_f.write(src_lines_low)
 				tgt_f.write(tgt_lines_low)
 
@@ -110,7 +110,6 @@ def main():
 			spaces = re.compile(r'[^\S\n]+')
 			ban = re.compile(r'(asshole|bitch|child-fucker|motherfucker|motherfucking|nigger|bitch)', re.IGNORECASE)
 
-			print (cornell[0])
 
 			for c in cornell:
 				for i in range(0, len(c['lines']) - 1, 2):

@@ -74,9 +74,10 @@ class Model(object):
 
 		self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=settings.num_keep_ckpts)
 
-		print('*** Trainable variables')
-		for param in params:
-			print("\t *** %s, %s, %s" % (param.name, str(param.get_shape()), param.op.device))
+		if (self.mode == tf.contrib.learn.ModeKeys.TRAIN):
+			print('*** Trainable variables')
+			for param in params:
+				print("\t *** %s, %s, %s" % (param.name, str(param.get_shape()), param.op.device))
 
 
 	def decode(self, sess):

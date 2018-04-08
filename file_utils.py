@@ -41,17 +41,14 @@ def lines_in_file(file_path):
 	''' "Fast" way to count lines in a file '''
 	f = open(file_path, 'rb')
 	buf_gen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
-	return sum( buf.count(b'\n') for buf in buf_gen )
+	return sum( buf.count(b'\n') for buf in buf_gen ) +1
 
 def read_lines(file, file_path, batch_size):
 	''' Read (bacth_size) lines from {file} at {file_path} an return zip(lines) 
 		Can be slow depending on Math Jesus. 
 	'''
 	_LINES_IN_FILE[file_path] = lines_in_file(file_path)
-
 	_FILE_BATCH_SIZE[file_path] = int(closest_divisor(_LINES_IN_FILE[file_path], batch_size))
-
-	# @TODO: If closest_divisor == 1 or < 1e4 think of a different way.
 
 	l = [iter(file)] * _FILE_BATCH_SIZE[file_path]
 
@@ -82,3 +79,8 @@ def write_lines(file, lines):
 	''' Used only for multithreading writting. (or not right now)'''
 	file.write(lines)
 	return len(lines)
+
+def load_data_readlines(inference_input_file):
+	with open(inference_input_file, 'r', encoding='utf-8') as f:
+		inference_data = f.read().splitlines()
+	return inference_data

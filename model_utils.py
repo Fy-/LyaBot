@@ -16,13 +16,36 @@ from settings import settings
 from iterator_utils import DataIterator
 from vocab import Vocab
 
+
+def create_eval_model(model_creator, file):
+	vocab_table, _ = Vocab.create_vocab_tables()
+
+	graph = tf.Graph()
+	with graph.as_default(), tf.container(scope or "eval"):
+		src_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
+		tgt_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
+		src_dataset = tf.data.TextLineDataset(src_file_placeholder)
+		tgt_dataset = tf.data.TextLineDataset(tgt_file_placeholder)
+
+		iterator = DataIterator.get_iterator(vocab_table, src_dataset=src_dataset, tgt_dataset=tgt_dataset)
+
+		model = model_creator(mode=tf.contrib.learn.ModeKeys.EVAL, iterator=iterator, vocab_table=vocab_table)
+
+	return  type('',(object,), {
+		'graph' : graph,
+		'model' : model,
+		'iterator' : iterator,
+		'src_file_placeholder' : src_file_placeholder,
+		'tgt_file_placeholder' :  tgt_file_placeholder
+	})
+
 def create_train_model(model_creator, file):
 	graph = tf.Graph()
 	with graph.as_default(), tf.container("train"):
 		skip_count_placeholder = tf.placeholder(shape=(), dtype=tf.int64)
 
 		vocab_table, _ = Vocab.create_vocab_tables()
-		iterator = DataIterator.get_iterator(file, vocab_table, skip_count=skip_count_placeholder)
+		iterator = DataIterator.get_iterator(vocab_table, file=file, skip_count=skip_count_placeholder)
 		model = model_creator(mode=tf.contrib.learn.ModeKeys.TRAIN, iterator=iterator, vocab_table=vocab_table)
 
 	return  type('',(object,), {
