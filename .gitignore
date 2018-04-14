@@ -1,13 +1,14 @@
 # Cause it's more than 100Gb
-_data/
-_data_formated/*
-_data_raw/*
+_data/*.src
+_data/*.tgt
+_data_formated/*.src
+_data_formated/*.tgt
+_data_formated/*.json
 _model/*
 _model_bpe/*
 _env/*
 # Cause it's personal
 _.py
-infer.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

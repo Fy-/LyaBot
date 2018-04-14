@@ -119,10 +119,10 @@ def main():
 			src_lines_low = '\n'.join(src_lines_lower)+'\n'
 			tgt_lines_low = '\n'.join(tgt_lines_lower)+'\n'
 
-			for i in range(1):
+			for i in range(1000):
 				src_f.write(src_lines)
 				tgt_f.write(tgt_lines)
-			for i in range(1):
+			for i in range(1000):
 				src_f.write(src_lines_low)
 				tgt_f.write(tgt_lines_low)
 
@@ -154,7 +154,7 @@ def main():
 					if ban.findall(target_line):
 						continue
 
-					for i in range(1):
+					for i in range(10):
 						src_f.write(prepare(html, dot, dash, spaces, src_line) + '\n')
 						tgt_f.write(prepare(html, dot, dash, spaces, target_line) + '\n')
 				

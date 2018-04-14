@@ -25,11 +25,38 @@ import os
 import random
 import nltk
 import tensorflow as tf 
-
+import time
+import math
 from model_utils import create_or_load_model
 from file_utils import lines_in_file, load_data_readlines
 from settings import settings
 from train_utils import add_summary
+
+def compute_perplexity(model, sess, name):
+	def safe_exp(value):
+		''' Exponentiation with catching of overflow error. (And not The Barrens) '''
+		try:
+			ans = math.exp(value)
+		except OverflowError:
+			ans = float("inf")
+		return ans	
+
+	total_loss = 0
+	total_predict_count = 0
+	start_time = time.time()
+
+	while True:
+		try:
+			loss, predict_count, batch_size = model.eval(sess)
+			total_loss += loss * batch_size
+			total_predict_count += predict_count
+		except tf.errors.OutOfRangeError:
+			break	
+
+	perplexity = safe_exp(total_loss / total_predict_count)
+
+	print ('*** Eval perplexity: {:.2f}'.format( perplexity))
+	return perplexity
 
 def run_infer_sample(infer_model, infer_sess, src_data, tgt_data, n=1):
 	''' Because training is boring '''
@@ -92,7 +119,26 @@ def format_spm_text_str(symbols):
 	words = ' '.join(symbols)
 	return u"".join(words.split()).replace(u'\u2581', u' ').strip()
 
-def run_eval(infer_model, infer_sess, summary_writer, save_best=True):
+def run_eval(eval_model, eval_sess, summary_writer):
+	with eval_model.graph.as_default():
+		loaded_eval_model, global_step = create_or_load_model(eval_model.model, eval_sess, 'eval')
+
+	src_file = os.path.join(settings.data_formated, 'dev.bpe.src')
+	tgt_file = os.path.join(settings.data_formated, 'dev.bpe.tgt')	
+
+
+	iterator_feed_dict = {
+		eval_model.src_file_placeholder: src_file,
+		eval_model.tgt_file_placeholder: tgt_file
+	}
+
+	eval_sess.run(eval_model.iterator.initializer, feed_dict=iterator_feed_dict)
+	ppl = compute_perplexity(eval_model.model, eval_sess, 'eval')
+	add_summary(summary_writer, global_step, 'eval_ppl', ppl)
+
+	return ppl
+
+def run_full_eval(infer_model, infer_sess, summary_writer, save_best=True):
 	print ('*** Starting EVAL on test.bpe.src ...\n')
 	with infer_model.graph.as_default():
 		loaded_infer_model, global_step = create_or_load_model(infer_model.model, infer_sess, 'infer')
@@ -135,9 +181,20 @@ def decode_and_evaluate(model, sess, output, ref_file):
 				break
 
 	evaluation_scores = {}
-	evaluation_scores['bleu'] = _bleu(ref_file, output)
-	evaluation_scores['accuracy'] = _accuracy(ref_file, output)
-	evaluation_scores['word_accuracy'] = _word_accuracy(ref_file, output)
+	try:
+		evaluation_scores['bleu'] = _bleu(ref_file, output)
+	except:
+		evaluation_scores['bleu'] = 0.
+
+	try:
+		evaluation_scores['accuracy'] = _accuracy(ref_file, output)
+	except:
+		evaluation_scores['accuracy'] = 0.
+
+	try:
+		evaluation_scores['word_accuracy'] = _word_accuracy(ref_file, output)
+	except:
+		evaluation_scores['word_accuracy'] = 0.
 
 	return evaluation_scores
 
@@ -171,7 +228,7 @@ def _word_accuracy(label_path, output_path):
 
 				acc += 100 * match / max(len(labels), len(preds))
 				count += 1
-	return acc / count
+	return float(round((acc / count), 2))
 
 def _accuracy(label_path, output_path):
 	with open(label_path, 'r', encoding='utf-8') as label_file:
@@ -187,5 +244,5 @@ def _accuracy(label_path, output_path):
 
 				count += 1
 
-	return 100 * match / count
+	return float(round((100 * match / count), 2))
 

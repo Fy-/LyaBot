@@ -36,7 +36,7 @@ def main():
 	format_data(args)
 
 def format_data(args):
-	preprocessing = Preprocessing(['data.src', 'data.tgt', 'train_1.src', 'train_1.tgt'])
+	preprocessing = Preprocessing(['data.src', 'data.tgt'])
 	if args.no_vocab:
 		preprocessing.create_vocab()
 		preprocessing.learn_bpe()

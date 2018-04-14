@@ -30,15 +30,16 @@ from iterator_utils import DataIterator
 from vocab import Vocab
 
 
-def create_eval_model(model_creator, file):
-	vocab_table, _ = Vocab.create_vocab_tables()
+def create_eval_model(model_creator):
 
 	graph = tf.Graph()
-	with graph.as_default(), tf.container(scope or "eval"):
+	with graph.as_default(), tf.container('eval'):
 		src_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
 		tgt_file_placeholder = tf.placeholder(shape=(), dtype=tf.string)
 		src_dataset = tf.data.TextLineDataset(src_file_placeholder)
 		tgt_dataset = tf.data.TextLineDataset(tgt_file_placeholder)
+		vocab_table, _ = Vocab.create_vocab_tables()
+
 
 		iterator = DataIterator.get_iterator(vocab_table, src_dataset=src_dataset, tgt_dataset=tgt_dataset)
 
@@ -125,8 +126,8 @@ def create_or_load_model(model, session, name):
 def single_cell(num_units, forget_bias, dropout, mode):
 	''' It's A BLOB or a Physarum polycephalum '''
 	dropout = dropout if mode == tf.contrib.learn.ModeKeys.TRAIN else 0.0
-	single_cell = tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=forget_bias)
-	#single_cell = tf.contrib.rnn.GRUCell(num_units)
+	#single_cell = tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=forget_bias)
+	single_cell = tf.contrib.rnn.GRUCell(num_units)
 	if dropout > 0.0:
 		 single_cell = tf.contrib.rnn.DropoutWrapper(cell=single_cell, input_keep_prob=(1.0-dropout))
 
@@ -149,7 +150,6 @@ def gradient_clip(gradients, max_gradient_norm):
 	''' Clipping gradients of a model.'''
 	clipped_gradients, gradient_norm = tf.clip_by_global_norm(gradients, max_gradient_norm)
 	gradient_norm_summary = [tf.summary.scalar("grad_norm", gradient_norm)]
-	gradient_norm_summary.append(
-	tf.summary.scalar("clipped_gradient", tf.global_norm(clipped_gradients)))
+	gradient_norm_summary.append(tf.summary.scalar("clipped_gradient", tf.global_norm(clipped_gradients)))
 
 	return clipped_gradients, gradient_norm_summary, gradient_norm

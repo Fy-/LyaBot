@@ -25,6 +25,7 @@ import os
 import ujson as json
 import tensorflow as tf
 from file_utils import lines_in_file
+import math 
 
 class Settings(object):
 	def __init__(self):
@@ -54,7 +55,7 @@ class Settings(object):
 		
 		''' Vocab & BPE '''
 		self.vocab_file = os.path.join(self.path_data, 'vocab.src')
-		self.vocab_wanted_size = 40000
+		self.vocab_wanted_size = 25600
 		self.data_formated = os.path.join(self.path, '_data_formated')
 		self.bpe_file = os.path.join(self.data_formated, 'bpe_joins.json')
 		self.vocab_size = self.vocab_wanted_size+3
@@ -62,7 +63,8 @@ class Settings(object):
 		''' Training '''
 		self.step_per_save = 1000
 		self.step_per_show = 100
-		self.step_per_eval = 2000
+		self.step_per_eval = 1000
+		self.step_per_feval = self.step_per_eval * 5
 
 		''' Model '''
 		self.unk = "<unk>" # Same as https://www.youtube.com/watch?v=sSTVECyKlOg
@@ -71,17 +73,18 @@ class Settings(object):
 		self.unk_id = 0
 		self.sos_id = 1
 		self.eos_id = 2
-		self.batch_size =  96
+		self.batch_size =  128
 		self.num_layers =  2
-		self.num_units =  512	
-		self.learning_rate  = [0.001, 0.001, 0.0001]
+		self.num_units =  512		
+		self.learning_rate  = [0.001, 0.0001, 0.00001]
 		self.max_gradient_norm = 5.0
 		self.beam_width = 20
 		self.init_weight =  0.1
 		self.num_keep_ckpts = 2
 		self.dropout = 0.2
-		self.num_train_steps = 10000000
-		self.num_buckets = 5
+		self.num_train_steps = 0
+		self.num_buckets = 2
+		self.embedding_size = 512
 
 		self.load()
 
@@ -136,4 +139,5 @@ class Settings(object):
 			config_proto.inter_op_parallelism_threads = num_inter_thread
 
 		return config_proto
+
 settings = Settings()

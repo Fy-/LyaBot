@@ -61,12 +61,21 @@ def lines_in_file(file_path):
 def read_lines(file, file_path, batch_size):
 	''' Read (bacth_size) lines from {file} at {file_path} an return zip(lines) 
 		Can be slow depending on Math Jesus. 
+	''' 
 	'''
 	_LINES_IN_FILE[file_path] = lines_in_file(file_path)
 	_FILE_BATCH_SIZE[file_path] = int(closest_divisor(_LINES_IN_FILE[file_path], batch_size))
 
 	l = [iter(file)] * _FILE_BATCH_SIZE[file_path]
-
+	'''
+	_LINES_IN_FILE[file_path] = lines_in_file(file_path)
+	if batch_size > _LINES_IN_FILE[file_path]:
+		l = [iter(file)] * _LINES_IN_FILE[file_path]
+	else:
+		l = [iter(file)] * batch_size
+	
+	#_FILE_BATCH_SIZE[file_path] = int(closest_divisor(_LINES_IN_FILE[file_path], batch_size))
+	
 	return zip(*l)
 
 def read_until_for(file, fr, to):

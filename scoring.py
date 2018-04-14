@@ -24,7 +24,6 @@ from difflib import SequenceMatcher
 from collections import OrderedDict
 import regex as re
 
-from misc_utils import safe_exp, format_spm_text
 
 class Scoring(object):
 	_poncts = re.compile(r'[\.!\?;]$') # for end lines
@@ -37,6 +36,7 @@ class Scoring(object):
 		(-2, None, re.compile('(?i)I don\'t think')),
 		(-10, None, re.compile('(?i)no, no, no, no')),
 		(-10, None, re.compile('(?i)yes, yes, yes, yes')),
+		(-15, None, re.compile('(?i)dozens of us')),
 		(3, re.compile('(?i)you( are|\'re)|are you'), re.compile('(?i) I\'m')),
 		(3, re.compile('(?i)how old'), re.compile('(?i)years old|CALL_NUM_')),
 		(3, re.compile('(?i)what color'), re.compile('(?i)blue|yellow|red|orange|grey|green|pink|black|white|turquoise')), # color list plz
@@ -107,6 +107,6 @@ class Scoring(object):
 
 	def check_ending(self, ending):
 		if re.search(Scoring._poncts, ending) or re.search(Scoring._emotes_utf8, ending) or ending in Scoring._emotes:
-			return 3
+			return 10
 		else:
-			return -2
+			return -10

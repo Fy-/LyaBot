@@ -53,14 +53,14 @@ class Model(object):
 		if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
 			self.train_loss = res[1]
 			self.word_count = tf.reduce_sum(self.iterator.source_sequence_length) + tf.reduce_sum(self.iterator.target_sequence_length)
-			self.predict_count = tf.reduce_sum(self.iterator.target_sequence_length)
 		elif self.mode == tf.contrib.learn.ModeKeys.INFER:
 			self.infer_logits, _, self.final_context_state, self.sample_id = res
 			self.sample_words = reverse_vocab_table.lookup(tf.to_int64(self.sample_id))
+		elif self.mode == tf.contrib.learn.ModeKeys.EVAL:
+			self.eval_loss = res[1]
+
 
 		self.global_step = tf.Variable(0, trainable=False)
-		self.global_epoch = tf.Variable(0, trainable=False)
-
 		params = tf.trainable_variables()
 
 		if self.mode == tf.contrib.learn.ModeKeys.TRAIN:
@@ -86,6 +86,9 @@ class Model(object):
 		elif self.mode == tf.contrib.learn.ModeKeys.INFER:
 			self.infer_summary = tf.no_op()
 
+		if self.mode != tf.contrib.learn.ModeKeys.INFER:
+			self.predict_count = tf.reduce_sum(self.iterator.target_sequence_length)
+
 		self.saver = tf.train.Saver(tf.global_variables(), max_to_keep=settings.num_keep_ckpts)
 
 		if (self.mode == tf.contrib.learn.ModeKeys.TRAIN):
@@ -98,6 +101,10 @@ class Model(object):
 		_, infer_summary, _, sample_words = self.infer(sess)
 		sample_words = sample_words.transpose()
 		return sample_words, infer_summary
+
+	def eval(self, sess):
+		assert self.mode == tf.contrib.learn.ModeKeys.EVAL
+		return sess.run([self.eval_loss, self.predict_count, self.batch_size])
 
 	def train(self, sess):
 		''' You hope ... '''
@@ -129,7 +136,7 @@ class Model(object):
 
 	def _embbedings(self):
 		with tf.variable_scope("embeddings"):
-			self.embedding_encoder = tf.get_variable("embedding_share", [settings.vocab_size, settings.num_units])
+			self.embedding_encoder = tf.get_variable("embedding_share", [settings.vocab_size, settings.embedding_size])
 			self.embedding_decoder = self.embedding_encoder
 
 	def _max_iters(self, source_sequence_length):

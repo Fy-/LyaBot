@@ -28,26 +28,28 @@ from time import time
 from model import Model
 from model_utils import create_or_load_model, create_train_model, create_infer_model, create_eval_model
 from train_utils import TrainStats, calc_num_steps, blue_score, add_summary
-from eval_utils import run_infer_sample, run_eval
+from eval_utils import run_infer_sample, run_eval, run_full_eval
 from file_utils import load_data_readlines
 from settings import settings
 
 
 
 def train_fn(epoch, lr):
-	print('*** Starting training epoch: {}, lr {}'.format(epoch, lr))
-
 
 	sample_src_data = load_data_readlines(os.path.join(settings.data_formated, 'dev.bpe.src'))
 	sample_tgt_data = load_data_readlines(os.path.join(settings.data_formated, 'dev.bpe.tgt'))
 
 	config = settings.get_config_proto()
+	settings.num_train_steps = calc_num_steps(epoch)
 
 	settings.learning_rate = lr
 	train_model = create_train_model(Model, 'final')
 	infer_model = create_infer_model(Model)
+	eval_model = create_eval_model(Model)
+
 	train_sess = tf.Session(config=config, graph=train_model.graph, )
 	infer_sess = tf.Session(config=config, graph=infer_model.graph, )
+	eval_sess = tf.Session(config=config, graph=eval_model.graph, )
 
 	with train_model.graph.as_default():
 		loaded_train_model, global_step = create_or_load_model(train_model.model, train_sess, 'train')
@@ -55,14 +57,15 @@ def train_fn(epoch, lr):
 	last_stats_step = global_step
 	last_save_step = global_step
 	last_eval = global_step
+	last_feval = global_step
 
 	skip_count = settings.batch_size * settings.epoch_step
 	train_sess.run(train_model.iterator.initializer, feed_dict={train_model.skip_count_placeholder: skip_count})
 	start_train_time = time()
 	train_stats = TrainStats(train_model)
-	num_steps = calc_num_steps(epoch)
 
-	while settings.epoch_step <= num_steps:
+	print ('\nStarting training {}/{}, epoch={}, learning_rate={} ^^\n'.format(settings.epoch_step, settings.num_train_steps, settings.epoch, settings.learning_rate))
+	while True:
 		start_time = time()
 
 		try:
@@ -81,6 +84,7 @@ def train_fn(epoch, lr):
 			train_stats.print_step_info()
 
 			if is_overflow:
+				print ('*** Break du to overflow.')
 				break
 
 			train_stats.reset()
@@ -97,7 +101,11 @@ def train_fn(epoch, lr):
 
 		if global_step - last_eval >= settings.step_per_eval:
 			last_eval = global_step
-			run_eval(infer_model, infer_sess, train_stats.summary_writer)
+			run_eval(eval_model, eval_sess, train_stats.summary_writer)
+
+		if global_step - last_feval >= settings.step_per_feval:
+			last_feval = global_step
+			run_full_eval(infer_model, infer_sess, train_stats.summary_writer)
 
 	settings.epoch += 1
 	settings.epoch_step = 0

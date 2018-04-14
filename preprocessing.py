@@ -23,15 +23,16 @@
 		- https://github.com/daniel-kukiela/nmt-chatbot 
 		- https://github.com/rsennrich/subword-nmt
 '''
+import ntpath
 
 import os
 import ujson as json
 import regex as re
 import time
+import glob
 from multiprocessing import Pool
 from itertools import chain
 from collections import Counter
-
 
 from settings import settings
 from file_utils import read_lines, write_lines, _LINES_IN_FILE,_FILE_BATCH_SIZE
@@ -41,10 +42,12 @@ from bpe import BPE
 class Preprocessing(object):
 
 	def __init__(self, files, processes=10):
-		self.files = files
-		self.processes = processes
+		self.files =  [f for f_ in [glob.glob(e) for e in ('{}/*.src'.format(settings.path_data), '{}/*.tgt'.format(settings.path_data))] for f in f_]
+
+		self.processes = 8
 		self.bpe = BPE()
-		print ('Starting Preprocessing on files: {}'.format(str(self.files)))
+
+		print ('*** Starting Preprocessing on files: \n\t{}'.format('\n\t'.join(self.files)))
 
 	def write_lines(self, file, lines, first_batch):
 		if not len(lines) or lines[-1] == '' or lines[-1] == '²':
@@ -62,12 +65,13 @@ class Preprocessing(object):
 		vocab_obj = Vocab()
 		for file in self.files:
 			print ('*** Starting creating vocab and writting tokenized files {}'.format(file))
-			in_path = os.path.join(settings.path_data, file)
-			out_path = os.path.join(settings.data_formated, '_tmp_{}'.format(file))
+			in_path = file
+			out_path = in_path.replace(settings.path_data, settings.data_formated).replace(ntpath.basename(in_path), '_tmp_{}'.format(ntpath.basename(in_path)))
 
-			if 'train' in in_path:
-				out_path_dev = os.path.join(settings.data_formated, file.replace('train_1', '_tmp_dev'))
-				out_path_test = os.path.join(settings.data_formated, file.replace('train_1', '_tmp_test'))
+
+			if 'train_0' in in_path:
+				out_path_dev = in_path.replace(settings.path_data, settings.data_formated).replace('train_0', '_tmp_dev')
+				out_path_test = in_path.replace(settings.path_data, settings.data_formated).replace('train_0', '_tmp_test')
 				
 
 			count_lines = 0
@@ -78,13 +82,13 @@ class Preprocessing(object):
 			lines_in_test_dev = 0
 			with open(in_path, 'r', encoding='utf-8', buffering=131072) as in_file:
 				with open(out_path, 'w', encoding='utf-8') as out_file:
-					with Pool(processes=10) as pool:
+					with Pool(processes=self.processes) as pool:
 						for lines in read_lines(in_file, in_path, int(1e4)):
 							count_lines += len(lines)
 			
 							tokens = pool.map(vocab_obj.tokenizer, lines)
 
-							if 'train' in in_path:
+							if 'train_0' in in_path:
 								if dev_written == False:
 									count_written = 0
 									with open(out_path_test, 'w', encoding='utf-8') as out_file_test:
@@ -116,8 +120,9 @@ class Preprocessing(object):
 
 							if (len(lines) == 0):
 								break
+						print('\n', flush=True)
 
-		print('\n', end='\r', flush=True)
+		print('\n', flush=True)
 
 		self.generated_vocab = True
 		self.vocab = vocab_all
@@ -128,20 +133,21 @@ class Preprocessing(object):
 			self.joins = {tuple(json.loads(k)): v for k, v in json.load(bpe_file).items()}
 
 		files = self.files
-		files.append('dev.src')
-		files.append('dev.tgt')
-		files.append('test.src')
-		files.append('test.tgt')
+		files.append(os.path.join(settings.path_data, 'dev.src'))
+		files.append(os.path.join(settings.path_data,'dev.tgt'))
+		files.append(os.path.join(settings.path_data,'test.src'))
+		files.append(os.path.join(settings.path_data,'test.tgt'))
 		out_files = {}
 
 		for file in files:
 			print ('*** Applying BPE to {}'.format(file))
 
-			in_path = os.path.join(settings.data_formated, '_tmp_{}'.format(file))
-
+			in_path = file.replace(ntpath.basename(file), '_tmp_{}'.format(ntpath.basename(file)))
+			in_path = in_path.replace(settings.path_data, settings.data_formated)
 
 			if 'dev.src' in in_path or 'dev.tgt' in in_path or 'test.src' in in_path or 'test.tgt' in in_path:
-				out_file = open(os.path.join(settings.data_formated, file.replace('.src', '.bpe.src').replace('.tgt', '.bpe.tgt')), 'w', encoding='utf-8')
+				out_file = open(file.replace('.src', '.bpe.src').replace('.tgt', '.bpe.tgt').replace(settings.path_data, settings.data_formated), 'w', encoding='utf-8')
+				print ('CCC: ', file.replace('.src', '.bpe.src').replace('.tgt', '.bpe.tgt').replace(settings.path_data, settings.data_formated))
 			else:
 				if '.src' in in_path:
 					if 'final.src' not in out_files.keys():
@@ -157,6 +163,8 @@ class Preprocessing(object):
 			start = time.time()
 			with open(in_path, 'r', encoding='utf-8') as in_file:
 				with Pool(processes=self.processes) as pool:
+					print ('OOO: ', in_path.replace(settings.path_data, settings.data_formated))
+
 					for lines in read_lines(in_file, in_path, int(1e5)):
 						count_lines += len(lines)
 						seq = pool.map(self.bpe.apply_bpe_sentence, lines)
@@ -166,8 +174,9 @@ class Preprocessing(object):
 
 						if (len(lines) == 0):
 							break
+					print('\n', flush=True)
 
-		print('\n', end='\r', flush=True)
+		print('\n', flush=True)
 
 
 
