@@ -44,6 +44,7 @@ class Scoring(object):
 	]
 
 	def __init__(self, question, _awnsers):
+
 		awnsers =[]
 		for awnser in _awnsers:
 			if awnser not in awnsers:
@@ -57,6 +58,7 @@ class Scoring(object):
 		index = 0
 		for awnser in awnsers:
 			self.scores[index] = self.check_score(awnser, index)
+
 			self.awnsers[index] = awnser
 			index += 1
 
@@ -65,7 +67,7 @@ class Scoring(object):
 		result = {}
 		i = 0
 		for index, score in scores:
-			result[index] = [score, self.awnsers[index]]
+			result[i] = self.awnsers[index]
 			i += 1
 			if i >= m:
 				break

@@ -33,9 +33,7 @@ from file_utils import load_data_readlines
 from settings import settings
 
 
-
 def train_fn(epoch, lr):
-
 	sample_src_data = load_data_readlines(os.path.join(settings.data_formated, 'dev.bpe.src'))
 	sample_tgt_data = load_data_readlines(os.path.join(settings.data_formated, 'dev.bpe.tgt'))
 
@@ -115,8 +113,7 @@ def train_fn(epoch, lr):
 
 if __name__ == '__main__':
 	for epoch, learning_rate in enumerate(settings.learning_rate):
-		if epoch < settings.epoch:
-			continue
+
 
 		train_fn(epoch, learning_rate)
 		

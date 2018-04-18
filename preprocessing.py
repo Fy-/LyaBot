@@ -41,9 +41,12 @@ from bpe import BPE
 
 class Preprocessing(object):
 
-	def __init__(self, files, processes=10):
-		self.files =  [f for f_ in [glob.glob(e) for e in ('{}/*.src'.format(settings.path_data), '{}/*.tgt'.format(settings.path_data))] for f in f_]
-
+	def __init__(self, files=[], processes=10, only_data=False):
+		if only_data:
+			self.files =  [f for f_ in [glob.glob(e) for e in ('{}/static.src'.format(settings.path_data), '{}/static.tgt'.format(settings.path_data))] for f in f_]
+		else:
+			self.files =  [f for f_ in [glob.glob(e) for e in ('{}/*.src'.format(settings.path_data), '{}/*.tgt'.format(settings.path_data))] for f in f_]
+		print(self.files)
 		self.processes = 8
 		self.bpe = BPE()
 

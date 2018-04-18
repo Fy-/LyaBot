@@ -109,8 +109,8 @@ def main():
 			sentence = sentence.replace(token.lower(), token)
 		return sentence
 
-	with open(os.path.join(settings.path_data, 'data.src'), 'w', encoding='utf-8') as src_f:
-		with open(os.path.join(settings.path_data, 'data.tgt'), 'w', encoding='utf-8') as tgt_f:
+	with open(os.path.join(settings.path_data, 'static.src'), 'w', encoding='utf-8') as src_f:
+		with open(os.path.join(settings.path_data, 'static.tgt'), 'w', encoding='utf-8') as tgt_f:
 			src_lines_lower = [lower(line) for line in src_lines]
 			tgt_lines_lower = [lower(line) for line in tgt_lines]
 
@@ -132,7 +132,8 @@ def main():
 			spaces = re.compile(r'[^\S\n]+')
 			ban = re.compile(r'(asshole|bitch|child-fucker|motherfucker|motherfucking|nigger|bitch)', re.IGNORECASE)
 
-
+	with open(os.path.join(settings.path_data, 'cornell.src'), 'w', encoding='utf-8') as src_f:
+		with open(os.path.join(settings.path_data, 'cornell.tgt'), 'w', encoding='utf-8') as tgt_f:
 			for c in cornell:
 				for i in range(0, len(c['lines']) - 1, 2):
 					src_line = c['lines'][i]['text'].strip()
@@ -157,7 +158,7 @@ def main():
 					for i in range(10):
 						src_f.write(prepare(html, dot, dash, spaces, src_line) + '\n')
 						tgt_f.write(prepare(html, dot, dash, spaces, target_line) + '\n')
-				
+					
 					
 if __name__ == "__main__":
 	main()

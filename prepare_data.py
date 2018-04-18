@@ -29,19 +29,26 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--no-vocab', dest='no_vocab', action='store_false')
 	parser.add_argument('--no-apply_bpe', dest='no_apply_bpe', action='store_false') # If only apply or learn use json  (bpe_joins.json)
-	
+	parser.add_argument('--only-static', dest='only_static', action='store_true') 
+
 
 
 	args = parser.parse_args()
 	format_data(args)
 
 def format_data(args):
-	preprocessing = Preprocessing(['data.src', 'data.tgt'])
-	if args.no_vocab:
+	print(args.only_static)
+	preprocessing = None
+	if args.only_static:
+		preprocessing = Preprocessing(only_data=True)
+	else:
+		preprocessing = Preprocessing(['data.src', 'data.tgt'])
+	
+	if args.no_vocab and not args.only_static:
 		preprocessing.create_vocab()
 		preprocessing.learn_bpe()
 
-	if args.no_apply_bpe:
+	if args.no_apply_bpe or args.only_static:
 		preprocessing.apply_bpe()	
 
 if __name__ == "__main__":

@@ -23,11 +23,9 @@
 
 from model import Model
 from model_utils import create_or_load_model, create_infer_model
-from eval_utils import format_spm_text, get_sentence, run_infer_sample
-from bpe import BPE
-from vocab import Vocab
-from scoring import Scoring
+
 from settings import settings
+from reply import Reply
 import tensorflow as tf
 import time, os
 
@@ -70,9 +68,6 @@ if __name__ == "__main__":
 		'Are you a feminist?'
 	]
 
-
-	bpe = BPE()
-	vocab = Vocab()
 	infer_model = create_infer_model(Model)
 
 	infer_sess = tf.Session( graph=infer_model.graph,  config=tf.ConfigProto(device_count={'GPU': 0}))
@@ -80,24 +75,12 @@ if __name__ == "__main__":
 	with infer_model.graph.as_default():
 		loaded_infer_model, global_step = create_or_load_model(infer_model.model, infer_sess, "infer")
 
+	reply = Reply(infer_model, infer_sess, loaded_infer_model)
+
 	for ss in s:
-		feed_dict = {
-			infer_model.src_placeholder: [bpe.apply_bpe_sentence(vocab.tokenizer(ss))],
-			infer_model.batch_size_placeholder: 1,
-		}	
-		infer_sess.run(infer_model.iterator.initializer, feed_dict=feed_dict)
-
-		nmt_outputs, attention_summary = loaded_infer_model.decode(infer_sess)
-
-
 		print('\n*** Input  >>> "{}"'.format(
 				ss
 			)
 		)
-
-		sentences = [get_sentence(a).decode("utf-8").strip() for a in nmt_outputs]
-		scoring = Scoring(ss, sentences)
-		for k, v in scoring.get_best_scores(5).items():
-			print ('*** LyaBot (score: {}) >>> "{}"'.format(v[0], v[1]))
-
+		print(reply.get(ss))
 
