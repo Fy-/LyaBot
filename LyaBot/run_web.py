@@ -51,7 +51,7 @@ def reply():
 	r = []
 	question = unquote(question.strip())
 	print(question)
-	r.append(replies.get(question))
+	r.append(replies.get(question.strip().strip(' ')))
 
 	resp = make_response(jsonify({'replies': r}))
 	resp.headers['Access-Control-Allow-Origin'] = '*'

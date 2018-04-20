@@ -1,9 +1,9 @@
 # Cause it's more than 100Gb
-_data/*.src
-_data/*.tgt
-_data_formated/*.src
-_data_formated/*.tgt
-_data_formated/*.json
+LyaBot/_data/*.src
+LyaBot/_data/*.tgt
+LyaBot/_data_formated/*.src
+LyaBot/_data_formated/*.tgt
+LyaBot/_data_formated/*.json
 _model/*
 _model_bpe/*
 _env/*

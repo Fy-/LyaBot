@@ -25,12 +25,12 @@ import math
 import tensorflow as tf
 from time import time
 
-from model import Model
-from model_utils import create_or_load_model, create_train_model, create_infer_model, create_eval_model
-from train_utils import TrainStats, calc_num_steps, blue_score, add_summary
-from eval_utils import run_infer_sample, run_eval, run_full_eval
-from file_utils import load_data_readlines
-from settings import settings
+from LyaBot.model import Model
+from LyaBot.model_utils import create_or_load_model, create_train_model, create_infer_model, create_eval_model
+from LyaBot.train_utils import TrainStats, calc_num_steps, blue_score, add_summary
+from LyaBot.eval_utils import run_infer_sample, run_eval, run_full_eval
+from LyaBot.file_utils import load_data_readlines
+from LyaBot.settings import settings
 
 
 def train_fn(epoch, lr):
