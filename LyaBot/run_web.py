@@ -24,6 +24,7 @@
 
 import tensorflow as tf
 import time
+from urllib.parse import unquote
 from flask import Flask, request, jsonify, make_response
 from .settings import settings
 from .preprocessing import Preprocessing
@@ -48,6 +49,7 @@ def reply():
 
 
 	r = []
+	question = unquote(question.strip())
 	print(question)
 	r.append(replies.get(question))
 

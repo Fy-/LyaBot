@@ -1,4 +1,4 @@
 {
-    "BOT_URL": "http://127.0.0.1:5001/reply",
+    "BOT_URL": "http://eruza.fy.to:5001/reply",
     "MIN_REPLY_TIME": 1000
 }

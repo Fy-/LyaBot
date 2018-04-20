@@ -18,6 +18,7 @@ module.exports = {
     autoOpenBrowser: false,
     errorOverlay: true,
     notifyOnErrors: true,
+    disableHostCheck: false,
     poll: false, // https://webpack.js.org/configuration/dev-server/#devserver-watchoptions-
 
     
