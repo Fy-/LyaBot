@@ -21,11 +21,11 @@
 	~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 '''
 
-from model import Model
-from model_utils import create_or_load_model, create_infer_model
+from LyaBot.model import Model
+from LyaBot.model_utils import create_or_load_model, create_infer_model
 
-from settings import settings
-from reply import Reply
+from LyaBot.settings import settings
+from LyaBot.reply import Reply
 import tensorflow as tf
 import time, os
 
