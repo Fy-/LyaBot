@@ -20,7 +20,7 @@ pycparser==2.18
 regex==2018.2.21
 six==1.11.0
 tensorboard==1.7.0
-tensorflow==1.7.0
+tensorflow==1.12.2
 termcolor==1.1.0
 ujson==1.35
 Werkzeug==0.15.3
